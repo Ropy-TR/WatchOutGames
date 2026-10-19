@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "test": "node --test test/*.test.js",
+    "data:update": "node scripts/update-football.mjs",
+    "clubs:update": "node scripts/update-clubs.mjs",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

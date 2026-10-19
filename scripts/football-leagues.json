@@ -1,0 +1,97 @@
+{
+  "season": "2026–27",
+  "selection": "Türkiye dışındaki UEFA ülke sıralamasında ilk 10 ülkenin en üst ligi + Süper Lig; 15 Ekim 2026 sıralama görünümü.",
+  "rankingSource": "https://www.uefa.com/nationalassociations/uefarankings/country/",
+  "leagues": [
+    {
+      "id": "england",
+      "name": "Premier League",
+      "country": "İngiltere",
+      "page": "2026–27 Premier League",
+      "clubCount": 20,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League"
+    },
+    {
+      "id": "italy",
+      "name": "Serie A",
+      "country": "İtalya",
+      "page": "2026–27 Serie A",
+      "clubCount": 20,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Serie_A"
+    },
+    {
+      "id": "spain",
+      "name": "La Liga",
+      "country": "İspanya",
+      "page": "2026–27 La Liga",
+      "clubCount": 20,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_La_Liga"
+    },
+    {
+      "id": "germany",
+      "name": "Bundesliga",
+      "country": "Almanya",
+      "page": "2026–27 Bundesliga",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Bundesliga"
+    },
+    {
+      "id": "france",
+      "name": "Ligue 1",
+      "country": "Fransa",
+      "page": "2026–27 Ligue 1",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Ligue_1"
+    },
+    {
+      "id": "netherlands",
+      "name": "Eredivisie",
+      "country": "Hollanda",
+      "page": "2026–27 Eredivisie",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Eredivisie"
+    },
+    {
+      "id": "portugal",
+      "name": "Primeira Liga",
+      "country": "Portekiz",
+      "page": "2026–27 Primeira Liga",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Primeira_Liga"
+    },
+    {
+      "id": "belgium",
+      "name": "Pro League",
+      "country": "Belçika",
+      "page": "2026–27 Belgian Pro League",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Belgian_Pro_League"
+    },
+    {
+      "id": "greece",
+      "name": "Super League",
+      "country": "Yunanistan",
+      "page": "2026–27 Super League Greece",
+      "clubCount": 14,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Super_League_Greece"
+    },
+    {
+      "id": "poland",
+      "name": "Ekstraklasa",
+      "country": "Polonya",
+      "page": "2026–27 Ekstraklasa",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Ekstraklasa"
+    },
+    {
+      "id": "turkey",
+      "name": "Süper Lig",
+      "country": "Türkiye",
+      "page": "2026–27 Süper Lig",
+      "clubCount": 18,
+      "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_S%C3%BCper_Lig"
+    }
+  ],
+  "clubsFetchedAt": "2026-10-19T22:50:50.296Z",
+  "rankingSnapshotSource": "https://en.wikipedia.org/wiki/UEFA_coefficient#Current_ranking"
+}

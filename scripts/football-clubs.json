@@ -1,0 +1,1002 @@
+[
+  {
+    "id": "Q9617",
+    "name": "Arsenal",
+    "league": "england"
+  },
+  {
+    "id": "Q18711",
+    "name": "Aston Villa",
+    "league": "england"
+  },
+  {
+    "id": "Q19568",
+    "name": "Bournemouth",
+    "league": "england"
+  },
+  {
+    "id": "Q19571",
+    "name": "Brentford",
+    "league": "england"
+  },
+  {
+    "id": "Q19453",
+    "name": "Brighton & Hove Albion",
+    "league": "england"
+  },
+  {
+    "id": "Q9616",
+    "name": "Chelsea",
+    "league": "england"
+  },
+  {
+    "id": "Q19580",
+    "name": "Coventry City",
+    "league": "england"
+  },
+  {
+    "id": "Q19467",
+    "name": "Crystal Palace",
+    "league": "england"
+  },
+  {
+    "id": "Q5794",
+    "name": "Everton",
+    "league": "england"
+  },
+  {
+    "id": "Q18708",
+    "name": "Fulham",
+    "league": "england"
+  },
+  {
+    "id": "Q19477",
+    "name": "Hull City",
+    "league": "england"
+  },
+  {
+    "id": "Q9653",
+    "name": "Ipswich Town",
+    "league": "england"
+  },
+  {
+    "id": "Q1128631",
+    "name": "Leeds United",
+    "league": "england"
+  },
+  {
+    "id": "Q1130849",
+    "name": "Liverpool",
+    "league": "england"
+  },
+  {
+    "id": "Q50602",
+    "name": "Manchester City",
+    "league": "england"
+  },
+  {
+    "id": "Q18656",
+    "name": "Manchester United",
+    "league": "england"
+  },
+  {
+    "id": "Q18716",
+    "name": "Newcastle United",
+    "league": "england"
+  },
+  {
+    "id": "Q19490",
+    "name": "Nottingham Forest",
+    "league": "england"
+  },
+  {
+    "id": "Q18739",
+    "name": "Sunderland",
+    "league": "england"
+  },
+  {
+    "id": "Q18741",
+    "name": "Tottenham",
+    "league": "england"
+  },
+  {
+    "id": "Q1886",
+    "name": "Atalanta",
+    "league": "italy"
+  },
+  {
+    "id": "Q1893",
+    "name": "Bologna",
+    "league": "italy"
+  },
+  {
+    "id": "Q1900",
+    "name": "Cagliari",
+    "league": "italy"
+  },
+  {
+    "id": "Q1120838",
+    "name": "Como",
+    "league": "italy"
+  },
+  {
+    "id": "Q2052",
+    "name": "Fiorentina",
+    "league": "italy"
+  },
+  {
+    "id": "Q845043",
+    "name": "Frosinone",
+    "league": "italy"
+  },
+  {
+    "id": "Q2074",
+    "name": "Genoa",
+    "league": "italy"
+  },
+  {
+    "id": "Q631",
+    "name": "Inter",
+    "league": "italy"
+  },
+  {
+    "id": "Q1422",
+    "name": "Juventus",
+    "league": "italy"
+  },
+  {
+    "id": "Q2609",
+    "name": "Lazio",
+    "league": "italy"
+  },
+  {
+    "id": "Q13391",
+    "name": "Lecce",
+    "league": "italy"
+  },
+  {
+    "id": "Q1543",
+    "name": "Milan",
+    "league": "italy"
+  },
+  {
+    "id": "Q289482",
+    "name": "Monza",
+    "league": "italy"
+  },
+  {
+    "id": "Q2641",
+    "name": "Napoli",
+    "league": "italy"
+  },
+  {
+    "id": "Q2693",
+    "name": "Parma",
+    "league": "italy"
+  },
+  {
+    "id": "Q2739",
+    "name": "Roma",
+    "league": "italy"
+  },
+  {
+    "id": "Q8603",
+    "name": "Sassuolo",
+    "league": "italy"
+  },
+  {
+    "id": "Q2768",
+    "name": "Torino",
+    "league": "italy"
+  },
+  {
+    "id": "Q2798",
+    "name": "Udinese",
+    "league": "italy"
+  },
+  {
+    "id": "Q501245",
+    "name": "Venezia",
+    "league": "italy"
+  },
+  {
+    "id": "Q223620",
+    "name": "Alavés",
+    "league": "spain"
+  },
+  {
+    "id": "Q8687",
+    "name": "Athletic Bilbao",
+    "league": "spain"
+  },
+  {
+    "id": "Q8701",
+    "name": "Atletico Madrid",
+    "league": "spain"
+  },
+  {
+    "id": "Q7156",
+    "name": "Barcelona",
+    "league": "spain"
+  },
+  {
+    "id": "Q8749",
+    "name": "Celta Vigo",
+    "league": "spain"
+  },
+  {
+    "id": "Q8760",
+    "name": "Deportivo A Coruña",
+    "league": "spain"
+  },
+  {
+    "id": "Q10512",
+    "name": "Elche",
+    "league": "spain"
+  },
+  {
+    "id": "Q8780",
+    "name": "Espanyol",
+    "league": "spain"
+  },
+  {
+    "id": "Q8806",
+    "name": "Getafe",
+    "league": "spain"
+  },
+  {
+    "id": "Q8823",
+    "name": "Levante",
+    "league": "spain"
+  },
+  {
+    "id": "Q8857",
+    "name": "Málaga",
+    "league": "spain"
+  },
+  {
+    "id": "Q10286",
+    "name": "Osasuna",
+    "league": "spain"
+  },
+  {
+    "id": "Q12236",
+    "name": "Racing Santander",
+    "league": "spain"
+  },
+  {
+    "id": "Q10300",
+    "name": "Rayo Vallecano",
+    "league": "spain"
+  },
+  {
+    "id": "Q8723",
+    "name": "Real Betis",
+    "league": "spain"
+  },
+  {
+    "id": "Q8682",
+    "name": "Real Madrid",
+    "league": "spain"
+  },
+  {
+    "id": "Q10315",
+    "name": "Real Sociedad",
+    "league": "spain"
+  },
+  {
+    "id": "Q10329",
+    "name": "Sevilla",
+    "league": "spain"
+  },
+  {
+    "id": "Q10333",
+    "name": "Valencia",
+    "league": "spain"
+  },
+  {
+    "id": "Q12297",
+    "name": "Villarreal",
+    "league": "spain"
+  },
+  {
+    "id": "Q15755",
+    "name": "FC Augsburg",
+    "league": "germany"
+  },
+  {
+    "id": "Q141971",
+    "name": "Union Berlin",
+    "league": "germany"
+  },
+  {
+    "id": "Q51976",
+    "name": "Werder Bremen",
+    "league": "germany"
+  },
+  {
+    "id": "Q41420",
+    "name": "Borussia Dortmund",
+    "league": "germany"
+  },
+  {
+    "id": "Q692691",
+    "name": "SV Elversberg",
+    "league": "germany"
+  },
+  {
+    "id": "Q38245",
+    "name": "Eintracht Frankfurt",
+    "league": "germany"
+  },
+  {
+    "id": "Q106394",
+    "name": "SC Freiburg",
+    "league": "germany"
+  },
+  {
+    "id": "Q51974",
+    "name": "Hamburger SV",
+    "league": "germany"
+  },
+  {
+    "id": "Q22707",
+    "name": "TSG Hoffenheim",
+    "league": "germany"
+  },
+  {
+    "id": "Q104770",
+    "name": "1. FC Köln",
+    "league": "germany"
+  },
+  {
+    "id": "Q702455",
+    "name": "RB Leipzig",
+    "league": "germany"
+  },
+  {
+    "id": "Q104761",
+    "name": "Bayer Leverkusen",
+    "league": "germany"
+  },
+  {
+    "id": "Q105254",
+    "name": "Mainz 05",
+    "league": "germany"
+  },
+  {
+    "id": "Q101959",
+    "name": "Borussia Mönchengladbach",
+    "league": "germany"
+  },
+  {
+    "id": "Q15789",
+    "name": "Bayern Münih",
+    "league": "germany"
+  },
+  {
+    "id": "Q160532",
+    "name": "SC Paderborn",
+    "league": "germany"
+  },
+  {
+    "id": "Q32494",
+    "name": "Schalke 04",
+    "league": "germany"
+  },
+  {
+    "id": "Q4512",
+    "name": "VfB Stuttgart",
+    "league": "germany"
+  },
+  {
+    "id": "Q845137",
+    "name": "Angers",
+    "league": "france"
+  },
+  {
+    "id": "Q182876",
+    "name": "Auxerre",
+    "league": "france"
+  },
+  {
+    "id": "Q218372",
+    "name": "Brest",
+    "league": "france"
+  },
+  {
+    "id": "Q328658",
+    "name": "Le Havre",
+    "league": "france"
+  },
+  {
+    "id": "Q210864",
+    "name": "Le Mans",
+    "league": "france"
+  },
+  {
+    "id": "Q191843",
+    "name": "Lens",
+    "league": "france"
+  },
+  {
+    "id": "Q19516",
+    "name": "Lille",
+    "league": "france"
+  },
+  {
+    "id": "Q48911",
+    "name": "Lorient",
+    "league": "france"
+  },
+  {
+    "id": "Q704",
+    "name": "Lyon",
+    "league": "france"
+  },
+  {
+    "id": "Q132885",
+    "name": "Marseille",
+    "league": "france"
+  },
+  {
+    "id": "Q180305",
+    "name": "Monaco",
+    "league": "france"
+  },
+  {
+    "id": "Q185163",
+    "name": "Nice",
+    "league": "france"
+  },
+  {
+    "id": "Q1051013",
+    "name": "Paris FC",
+    "league": "france"
+  },
+  {
+    "id": "Q483020",
+    "name": "PSG",
+    "league": "france"
+  },
+  {
+    "id": "Q19509",
+    "name": "Rennes",
+    "league": "france"
+  },
+  {
+    "id": "Q126334",
+    "name": "Strasbourg",
+    "league": "france"
+  },
+  {
+    "id": "Q19518",
+    "name": "Toulouse",
+    "league": "france"
+  },
+  {
+    "id": "Q501693",
+    "name": "Troyes",
+    "league": "france"
+  },
+  {
+    "id": "Q24904",
+    "name": "ADO Den Haag",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q81888",
+    "name": "Ajax",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q191264",
+    "name": "AZ",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q875120",
+    "name": "Cambuur",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q370712",
+    "name": "Excelsior",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q134241",
+    "name": "Feyenoord",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q854167",
+    "name": "Fortuna Sittard",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q749589",
+    "name": "Go Ahead Eagles",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q24711",
+    "name": "Groningen",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q200321",
+    "name": "Heerenveen",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q318348",
+    "name": "N.E.C.",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q269151",
+    "name": "PEC Zwolle",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q11938",
+    "name": "PSV",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q209895",
+    "name": "Sparta Rotterdam",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q1071713",
+    "name": "Telstar",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q19603",
+    "name": "Twente",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q24680",
+    "name": "Utrecht",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q332664",
+    "name": "Willem II",
+    "league": "netherlands"
+  },
+  {
+    "id": "Q2410944",
+    "name": "Académico de Viseu",
+    "league": "portugal"
+  },
+  {
+    "id": "Q1386850",
+    "name": "Alverca",
+    "league": "portugal"
+  },
+  {
+    "id": "Q1386869",
+    "name": "Arouca",
+    "league": "portugal"
+  },
+  {
+    "id": "Q131499",
+    "name": "Benfica",
+    "league": "portugal"
+  },
+  {
+    "id": "Q75684",
+    "name": "Braga",
+    "league": "portugal"
+  },
+  {
+    "id": "Q1046440",
+    "name": "Casa Pia",
+    "league": "portugal"
+  },
+  {
+    "id": "Q634829",
+    "name": "Estoril Praia",
+    "league": "portugal"
+  },
+  {
+    "id": "Q838134",
+    "name": "Estrela da Amadora",
+    "league": "portugal"
+  },
+  {
+    "id": "Q1387105",
+    "name": "Famalicão",
+    "league": "portugal"
+  },
+  {
+    "id": "Q926438",
+    "name": "Gil Vicente",
+    "league": "portugal"
+  },
+  {
+    "id": "Q216503",
+    "name": "Marítimo",
+    "league": "portugal"
+  },
+  {
+    "id": "Q1346314",
+    "name": "Moreirense",
+    "league": "portugal"
+  },
+  {
+    "id": "Q216459",
+    "name": "Nacional",
+    "league": "portugal"
+  },
+  {
+    "id": "Q128446",
+    "name": "Porto",
+    "league": "portugal"
+  },
+  {
+    "id": "Q622432",
+    "name": "Rio Ave",
+    "league": "portugal"
+  },
+  {
+    "id": "Q740637",
+    "name": "Santa Clara",
+    "league": "portugal"
+  },
+  {
+    "id": "Q75729",
+    "name": "Sporting CP",
+    "league": "portugal"
+  },
+  {
+    "id": "Q223450",
+    "name": "Vitória de Guimarães",
+    "league": "portugal"
+  },
+  {
+    "id": "Q187528",
+    "name": "Anderlecht",
+    "league": "belgium"
+  },
+  {
+    "id": "Q732002",
+    "name": "Antwerp",
+    "league": "belgium"
+  },
+  {
+    "id": "Q509170",
+    "name": "Beveren",
+    "league": "belgium"
+  },
+  {
+    "id": "Q364698",
+    "name": "Cercle Brugge",
+    "league": "belgium"
+  },
+  {
+    "id": "Q19585",
+    "name": "Charleroi",
+    "league": "belgium"
+  },
+  {
+    "id": "Q190916",
+    "name": "Club Brugge",
+    "league": "belgium"
+  },
+  {
+    "id": "Q216032",
+    "name": "Genk",
+    "league": "belgium"
+  },
+  {
+    "id": "Q18232",
+    "name": "Gent",
+    "league": "belgium"
+  },
+  {
+    "id": "Q618620",
+    "name": "Kortrijk",
+    "league": "belgium"
+  },
+  {
+    "id": "Q536651",
+    "name": "La Louvière",
+    "league": "belgium"
+  },
+  {
+    "id": "Q1668203",
+    "name": "Lommel SK",
+    "league": "belgium"
+  },
+  {
+    "id": "Q113000",
+    "name": "Mechelen",
+    "league": "belgium"
+  },
+  {
+    "id": "Q916199",
+    "name": "OH Leuven",
+    "league": "belgium"
+  },
+  {
+    "id": "Q138248",
+    "name": "Sint-Truiden",
+    "league": "belgium"
+  },
+  {
+    "id": "Q190561",
+    "name": "Standard Liège",
+    "league": "belgium"
+  },
+  {
+    "id": "Q196160",
+    "name": "Union SG",
+    "league": "belgium"
+  },
+  {
+    "id": "Q849544",
+    "name": "Westerlo",
+    "league": "belgium"
+  },
+  {
+    "id": "Q376635",
+    "name": "Zulte Waregem",
+    "league": "belgium"
+  },
+  {
+    "id": "Q201584",
+    "name": "AEK Athens",
+    "league": "greece"
+  },
+  {
+    "id": "Q16245443",
+    "name": "A.E. Kifisia",
+    "league": "greece"
+  },
+  {
+    "id": "Q219926",
+    "name": "Aris",
+    "league": "greece"
+  },
+  {
+    "id": "Q757320",
+    "name": "Asteras Tripolis",
+    "league": "greece"
+  },
+  {
+    "id": "Q757754",
+    "name": "Atromitos",
+    "league": "greece"
+  },
+  {
+    "id": "Q592241",
+    "name": "Iraklis",
+    "league": "greece"
+  },
+  {
+    "id": "Q2744247",
+    "name": "Kalamata",
+    "league": "greece"
+  },
+  {
+    "id": "Q824450",
+    "name": "Levadiakos",
+    "league": "greece"
+  },
+  {
+    "id": "Q931704",
+    "name": "OFI",
+    "league": "greece"
+  },
+  {
+    "id": "Q19628",
+    "name": "Olympiacos",
+    "league": "greece"
+  },
+  {
+    "id": "Q4122219",
+    "name": "Panathinaikos",
+    "league": "greece"
+  },
+  {
+    "id": "Q1460053",
+    "name": "Panetolikos",
+    "league": "greece"
+  },
+  {
+    "id": "Q204888",
+    "name": "PAOK",
+    "league": "greece"
+  },
+  {
+    "id": "Q43375974",
+    "name": "Volos",
+    "league": "greece"
+  },
+  {
+    "id": "Q24074158",
+    "name": "Cracovia",
+    "league": "poland"
+  },
+  {
+    "id": "Q925935",
+    "name": "GKS Katowice",
+    "league": "poland"
+  },
+  {
+    "id": "Q134255",
+    "name": "Górnik Zabrze",
+    "league": "poland"
+  },
+  {
+    "id": "Q189170",
+    "name": "Jagiellonia Białystok",
+    "league": "poland"
+  },
+  {
+    "id": "Q730219",
+    "name": "Korona Kielce",
+    "league": "poland"
+  },
+  {
+    "id": "Q52942",
+    "name": "Lech Poznań",
+    "league": "poland"
+  },
+  {
+    "id": "Q193749",
+    "name": "Legia Warsaw",
+    "league": "poland"
+  },
+  {
+    "id": "Q727918",
+    "name": "Motor Lublin",
+    "league": "poland"
+  },
+  {
+    "id": "Q668112",
+    "name": "Piast Gliwice",
+    "league": "poland"
+  },
+  {
+    "id": "Q836991",
+    "name": "Pogoń Szczecin",
+    "league": "poland"
+  },
+  {
+    "id": "Q2000763",
+    "name": "Radomiak Radom",
+    "league": "poland"
+  },
+  {
+    "id": "Q287236",
+    "name": "Raków Częstochowa",
+    "league": "poland"
+  },
+  {
+    "id": "Q328655",
+    "name": "Śląsk Wrocław",
+    "league": "poland"
+  },
+  {
+    "id": "Q244981",
+    "name": "Widzew Łódź",
+    "league": "poland"
+  },
+  {
+    "id": "Q86677609",
+    "name": "Wieczysta Kraków",
+    "league": "poland"
+  },
+  {
+    "id": "Q190943",
+    "name": "Wisła Kraków",
+    "league": "poland"
+  },
+  {
+    "id": "Q1475269",
+    "name": "Wisła Płock",
+    "league": "poland"
+  },
+  {
+    "id": "Q140497",
+    "name": "Zagłębie Lubin",
+    "league": "poland"
+  },
+  {
+    "id": "Q1636019",
+    "name": "Alanyaspor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q1231804",
+    "name": "Amed",
+    "league": "turkey"
+  },
+  {
+    "id": "Q857938",
+    "name": "Başakşehir",
+    "league": "turkey"
+  },
+  {
+    "id": "Q172567",
+    "name": "Beşiktaş",
+    "league": "turkey"
+  },
+  {
+    "id": "Q19613395",
+    "name": "Çorum",
+    "league": "turkey"
+  },
+  {
+    "id": "Q2426819",
+    "name": "Erzurumspor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q118919",
+    "name": "Eyüpspor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q6601875",
+    "name": "Fenerbahçe",
+    "league": "turkey"
+  },
+  {
+    "id": "Q495299",
+    "name": "Galatasaray",
+    "league": "turkey"
+  },
+  {
+    "id": "Q824850",
+    "name": "Gaziantep",
+    "league": "turkey"
+  },
+  {
+    "id": "Q641373",
+    "name": "Gençlerbirliği",
+    "league": "turkey"
+  },
+  {
+    "id": "Q1423118",
+    "name": "Göztepe",
+    "league": "turkey"
+  },
+  {
+    "id": "Q138230",
+    "name": "Kasımpaşa",
+    "league": "turkey"
+  },
+  {
+    "id": "Q513237",
+    "name": "Kocaelispor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q513840",
+    "name": "Konyaspor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q272712",
+    "name": "Rizespor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q430107",
+    "name": "Samsunspor",
+    "league": "turkey"
+  },
+  {
+    "id": "Q192641",
+    "name": "Trabzonspor",
+    "league": "turkey"
+  }
+]

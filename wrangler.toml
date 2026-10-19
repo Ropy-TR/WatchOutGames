@@ -2,6 +2,9 @@ name = "watchout-games"
 main = "src/worker.js"
 compatibility_date = "2026-10-19"
 
+[build]
+command = "node scripts/update-football.mjs --if-stale --allow-stale-on-error"
+
 [assets]
 directory = "./public"
 binding = "ASSETS"

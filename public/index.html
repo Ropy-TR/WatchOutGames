@@ -1,76 +1,39 @@
 <!doctype html>
 <html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f5cf35" />
-  <meta name="description" content="WatchOut Games — arkadaşlarınla aynı odada mini oyunlar." />
-  <title>WatchOut Games — Oyun gecesi başlasın</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css" />
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#090909"><title>WatchOut Games</title><link rel="stylesheet" href="/style.css"></head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/" aria-label="WatchOut Games ana sayfa"><span class="brand-mark">W<span>!</span></span><span>WatchOut<span class="brand-light"> Games</span></span></a>
-    <div class="top-right"><span class="online-dot"></span><span>OYUN GECESİ MODU</span><button class="icon-button" id="soundToggle" aria-label="Ses ayarını değiştir">♪</button></div>
-  </header>
-
+  <header class="topbar"><a class="brand" href="/">WatchOut<span>Games</span></a></header>
   <main>
     <section id="landing" class="landing">
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="eyebrow-line"></span> ARKADAŞLARINLA OYNA <span class="eyebrow-line"></span></div>
-        <h1>Bu gece<br /><span>kim şüpheli?</span></h1>
-        <p class="hero-text">Odayı kur, arkadaşlarını çağır.<br />Oyun gecesi için gereken her şey burada.</p>
-        <div class="hero-stats"><div><b>03–08</b><span>OYUNCU</span></div><i></i><div><b>4</b><span>MİNİ OYUN</span></div><i></i><div><b>0₺</b><span>ÜCRETSİZ</span></div></div>
-      </div>
+      <h1>WatchOut Games</h1>
       <div class="room-card">
-        <div class="card-heading"><div><span class="card-kicker">HADİ BAŞLAYALIM</span><h2>Bir odaya katıl</h2></div><span class="spark">✳</span></div>
         <div class="tab-row"><button class="tab active" data-tab="join">Odaya katıl</button><button class="tab" data-tab="create">Oda oluştur</button></div>
         <form id="joinForm" class="room-form">
-          <label>ODA KODU<div class="input-wrap code-wrap"><span class="field-icon">#</span><input id="joinCode" autocomplete="off" maxlength="5" placeholder="Örn. A7K2P" required /></div></label>
-          <label>ODA ŞİFRESİ<div class="input-wrap"><span class="field-icon">⌑</span><input id="joinPassword" type="password" placeholder="Oda sahibinden al" required /></div></label>
-          <label>TAKMA ADIN<div class="input-wrap"><span class="field-icon">♙</span><input id="joinNickname" maxlength="18" placeholder="Nasıl çağıralım?" required /></div></label>
-          <button class="primary-button" type="submit">Odaya gir <span>↗</span></button>
+          <label>Takma ad<input id="joinNickname" maxlength="18" autocomplete="nickname" required></label>
+          <label>Oda kodu<input id="joinCode" maxlength="5" autocomplete="off" autocapitalize="characters" required></label>
+          <label>Şifre<input id="joinPassword" type="password" maxlength="32" required></label>
+          <button class="primary-button" type="submit">Katıl</button>
         </form>
         <form id="createForm" class="room-form hidden">
-          <label>ODA ŞİFRESİ<div class="input-wrap"><span class="field-icon">⌑</span><input id="createPassword" type="password" placeholder="Arkadaşlarınla paylaşacağın şifre" required /></div></label>
-          <label>TAKMA ADIN<div class="input-wrap"><span class="field-icon">♙</span><input id="createNickname" maxlength="18" placeholder="Nasıl çağıralım?" required /></div></label>
-          <button class="primary-button" type="submit">Odamı kur <span>↗</span></button>
+          <label>Takma ad<input id="createNickname" maxlength="18" autocomplete="nickname" required></label>
+          <label>Oda şifresi<input id="createPassword" type="password" maxlength="32" required></label>
+          <button class="primary-button" type="submit">Oda oluştur</button>
         </form>
-        <div class="card-foot"><span>♧</span> Hesap yok. İndirme yok. Sadece oyun.</div>
-      </div>
-      <div class="hero-doodle doodle-one">✳</div><div class="hero-doodle doodle-two">✳</div><div class="scroll-note">AŞAĞI İN <span>↓</span></div>
-    </section>
-
-    <section class="games-overview"><div class="section-kicker">OYUN MENÜSÜ <span>— 01 / 04</span></div><h2>Gecenin planı<br /><em>hazır.</em></h2>
-      <div class="game-cards">
-        <article class="game-card game-spy"><div class="game-top"><span class="game-number">01</span><span class="game-icon">◉</span></div><h3>Spyfall</h3><p>Herkes aynı yerde… bir kişi hariç. Kim olduğunu bulabilecek misin?</p><span class="game-meta">3–8 KİŞİ <i>·</i> 8 DK</span></article>
-        <article class="game-card game-code"><div class="game-top"><span class="game-number">02</span><span class="game-icon">▦</span></div><h3>Codenames</h3><p>Tek kelimelik ipuçlarıyla takımının ajanlarını bul. Suikastçıya dikkat.</p><span class="game-meta">2+ KİŞİ <i>·</i> TAKIMLI</span></article>
-        <article class="game-card game-city"><div class="game-top"><span class="game-number">03</span><span class="game-icon">✎</span></div><h3>İsim Şehir</h3><p>Harf belli, süre başladı. Kategorileri herkesten önce doldur.</p><span class="game-meta">2+ KİŞİ <i>·</i> ZAMANA KARŞI</span></article>
-        <article class="game-card game-xox"><div class="game-top"><span class="game-number">04</span><span class="game-icon">⚽</span></div><h3>Futbol XOX</h3><p>İki takıma da uyan futbolcuyu bul. Futbol hafızana güveniyor musun?</p><span class="game-meta">2+ KİŞİ <i>·</i> XOX</span></article>
       </div>
     </section>
-
     <section id="room" class="room-view hidden">
-      <div class="room-header"><button id="leaveRoom" class="back-button">← Ana sayfa</button><div class="room-code-box"><span>ODA KODU</span><b id="roomCodeLabel">-----</b><button id="copyCode" title="Oda kodunu kopyala">▣</button></div><div class="room-status"><span class="online-dot"></span> CANLI ODA</div></div>
+      <div class="room-header"><button id="leaveRoom" class="subtle-button">Odadan çık</button><div class="room-code-box"><span>Oda</span><b id="roomCodeLabel">-----</b><button id="copyCode" aria-label="Oda kodunu kopyala">Kopyala</button></div><button id="shareRoom" class="subtle-button">Davet et</button></div>
       <div class="room-layout">
-        <aside class="room-sidebar"><div class="sidebar-title"><h2>Oyuncular</h2><span id="playerCount">0 / 8</span></div><div id="playerList" class="player-list"></div><div class="invite-box"><div class="invite-icon">↗</div><b>Arkadaşlarını çağır</b><p>Oda kodunu ve şifreni paylaş.</p><button id="shareRoom">Davet bağlantısını kopyala</button></div></aside>
-        <section class="room-main"><div id="roomNotice" class="notice hidden"></div><div id="gamePicker" class="game-picker"><div class="picker-heading"><span class="section-kicker">BİR OYUN SEÇ</span><h1>Ne oynuyoruz?</h1><p>Başlatmak için bir oyun seç. Arkadaşların anında katılır.</p></div>
-          <div class="picker-grid">
-            <button class="picker-card picker-spy" data-game="spy"><span class="picker-icon">◉</span><span class="picker-no">01</span><b>Spyfall</b><small>Aramızdaki casusu bul</small><span class="picker-arrow">↗</span></button>
-            <button class="picker-card picker-code" data-game="code"><span class="picker-icon">▦</span><span class="picker-no">02</span><b>Codenames</b><small>Ajanları takımca bul</small><span class="picker-arrow">↗</span></button>
-            <button class="picker-card picker-city" data-game="city"><span class="picker-icon">✎</span><span class="picker-no">03</span><b>İsim Şehir</b><small>Harflerle yarış</small><span class="picker-arrow">↗</span></button>
-            <button class="picker-card picker-xox" data-game="xox"><span class="picker-icon">⚽</span><span class="picker-no">04</span><b>Futbol XOX</b><small>Futbolcu kesişimini bul</small><span class="picker-arrow">↗</span></button>
-          </div><div class="suggestion"><span>✳</span><p><b>Oyun önerisi:</b> Biriniz sessiz sinema yapsın, diğerleri odadaki sohbetten tahmin etsin. Klasik ama güzel!</p></div>
-        </div><div id="activeGame" class="active-game hidden"></div></section>
+        <aside class="room-sidebar"><div class="sidebar-title"><h2>Oyuncular</h2><span id="playerCount">0 / 8</span></div><div id="playerList" class="player-list"></div></aside>
+        <section class="room-main"><div id="roomNotice" class="notice hidden"></div>
+          <div id="gamePicker" class="game-picker"><h1>Oyun seç</h1><div class="picker-grid">
+            <button class="picker-card" data-game="spy">Spyfall</button><button class="picker-card" data-game="code">Codenames</button><button class="picker-card" data-game="city">İsim Şehir</button><button class="picker-card" data-game="xox">Futbol XOX</button>
+          </div></div><div id="activeGame" class="active-game hidden"></div>
+        </section>
       </div>
     </section>
   </main>
-
-  <footer><a class="brand footer-brand" href="/"><span class="brand-mark">W<span>!</span></span><span>WatchOut<span class="brand-light"> Games</span></span></a><p>OYUN BİZİ BİR ARAYA GETİRİR.</p><span>© WATCHOUT GAMES 2026</span></footer>
-  <div id="toast" class="toast" role="status"></div>
-  <script src="/app.js"></script>
+  <dialog id="playerDialog"><form id="playerSearchForm"><div class="game-title-row"><h2>Futbolcu seç</h2><button type="button" class="subtle-button" id="closePlayerDialog">Kapat</button></div><input id="playerSearch" type="search" placeholder="Futbolcu ara" autocomplete="off" aria-label="Futbolcu ara"><div id="playerResults" class="player-results"></div></form></dialog>
+  <div id="toast" class="toast" role="status"></div><script src="/app.js"></script>
 </body>
 </html>
