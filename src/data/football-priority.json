@@ -1,0 +1,500 @@
+{
+  "schema": 3,
+  "description": "Strict allowed catalog: all covered Turkish clubs, six familiar clubs from each big-five league, and selected leading clubs elsewhere. The historical top-30 preference is intersected with this catalog.",
+  "ranking": {
+    "provider": "Opta Power Rankings",
+    "asOf": "2026-10-19",
+    "source": "https://theanalyst.com/articles/who-are-the-best-football-team-in-the-world-opta-power-rankings",
+    "dataSource": "https://dataviz.theanalyst.com/opta-power-rankings/index.js"
+  },
+  "eliteBoardPercent": 80,
+  "turkishBoardPercent": 90,
+  "turkishBigFourPercent": 95,
+  "weight": 8,
+  "leagues": {
+    "england": [
+      {
+        "id": "Q9617",
+        "name": "Arsenal"
+      },
+      {
+        "id": "Q9616",
+        "name": "Chelsea"
+      },
+      {
+        "id": "Q1130849",
+        "name": "Liverpool"
+      },
+      {
+        "id": "Q50602",
+        "name": "Manchester City"
+      },
+      {
+        "id": "Q18656",
+        "name": "Manchester United"
+      },
+      {
+        "id": "Q18741",
+        "name": "Tottenham"
+      }
+    ],
+    "italy": [
+      {
+        "id": "Q631",
+        "name": "Inter"
+      },
+      {
+        "id": "Q1422",
+        "name": "Juventus"
+      },
+      {
+        "id": "Q1543",
+        "name": "Milan"
+      },
+      {
+        "id": "Q2641",
+        "name": "Napoli"
+      },
+      {
+        "id": "Q2739",
+        "name": "Roma"
+      },
+      {
+        "id": "Q2609",
+        "name": "Lazio"
+      }
+    ],
+    "spain": [
+      {
+        "id": "Q8682",
+        "name": "Real Madrid"
+      },
+      {
+        "id": "Q7156",
+        "name": "Barcelona"
+      },
+      {
+        "id": "Q8701",
+        "name": "Atletico Madrid"
+      },
+      {
+        "id": "Q10329",
+        "name": "Sevilla"
+      },
+      {
+        "id": "Q10333",
+        "name": "Valencia"
+      },
+      {
+        "id": "Q12297",
+        "name": "Villarreal"
+      }
+    ],
+    "germany": [
+      {
+        "id": "Q15789",
+        "name": "Bayern Münih"
+      },
+      {
+        "id": "Q41420",
+        "name": "Borussia Dortmund"
+      },
+      {
+        "id": "Q104761",
+        "name": "Bayer Leverkusen"
+      },
+      {
+        "id": "Q702455",
+        "name": "RB Leipzig"
+      },
+      {
+        "id": "Q38245",
+        "name": "Eintracht Frankfurt"
+      },
+      {
+        "id": "Q4512",
+        "name": "VfB Stuttgart"
+      }
+    ],
+    "france": [
+      {
+        "id": "Q483020",
+        "name": "PSG"
+      },
+      {
+        "id": "Q132885",
+        "name": "Marseille"
+      },
+      {
+        "id": "Q704",
+        "name": "Lyon"
+      },
+      {
+        "id": "Q180305",
+        "name": "Monaco"
+      },
+      {
+        "id": "Q19516",
+        "name": "Lille"
+      },
+      {
+        "id": "Q185163",
+        "name": "Nice"
+      }
+    ],
+    "netherlands": [
+      {
+        "id": "Q81888",
+        "name": "Ajax"
+      },
+      {
+        "id": "Q11938",
+        "name": "PSV"
+      },
+      {
+        "id": "Q134241",
+        "name": "Feyenoord"
+      }
+    ],
+    "portugal": [
+      {
+        "id": "Q131499",
+        "name": "Benfica"
+      },
+      {
+        "id": "Q128446",
+        "name": "Porto"
+      },
+      {
+        "id": "Q75729",
+        "name": "Sporting CP"
+      }
+    ],
+    "belgium": [
+      {
+        "id": "Q187528",
+        "name": "Anderlecht"
+      },
+      {
+        "id": "Q190916",
+        "name": "Club Brugge"
+      },
+      {
+        "id": "Q216032",
+        "name": "Genk"
+      }
+    ],
+    "greece": [
+      {
+        "id": "Q19628",
+        "name": "Olympiacos"
+      },
+      {
+        "id": "Q4122219",
+        "name": "Panathinaikos"
+      },
+      {
+        "id": "Q201584",
+        "name": "AEK Athens"
+      },
+      {
+        "id": "Q204888",
+        "name": "PAOK"
+      }
+    ],
+    "poland": [
+      {
+        "id": "Q193749",
+        "name": "Legia Warsaw"
+      },
+      {
+        "id": "Q52942",
+        "name": "Lech Poznań"
+      }
+    ],
+    "turkey": [
+      {
+        "id": "Q1636019",
+        "name": "Alanyaspor"
+      },
+      {
+        "id": "Q1231804",
+        "name": "Amed"
+      },
+      {
+        "id": "Q857938",
+        "name": "Başakşehir"
+      },
+      {
+        "id": "Q172567",
+        "name": "Beşiktaş"
+      },
+      {
+        "id": "Q19613395",
+        "name": "Çorum"
+      },
+      {
+        "id": "Q2426819",
+        "name": "Erzurumspor"
+      },
+      {
+        "id": "Q118919",
+        "name": "Eyüpspor"
+      },
+      {
+        "id": "Q6601875",
+        "name": "Fenerbahçe"
+      },
+      {
+        "id": "Q495299",
+        "name": "Galatasaray"
+      },
+      {
+        "id": "Q824850",
+        "name": "Gaziantep"
+      },
+      {
+        "id": "Q641373",
+        "name": "Gençlerbirliği"
+      },
+      {
+        "id": "Q1423118",
+        "name": "Göztepe"
+      },
+      {
+        "id": "Q138230",
+        "name": "Kasımpaşa"
+      },
+      {
+        "id": "Q513237",
+        "name": "Kocaelispor"
+      },
+      {
+        "id": "Q513840",
+        "name": "Konyaspor"
+      },
+      {
+        "id": "Q272712",
+        "name": "Rizespor"
+      },
+      {
+        "id": "Q430107",
+        "name": "Samsunspor"
+      },
+      {
+        "id": "Q192641",
+        "name": "Trabzonspor"
+      }
+    ],
+    "world-elite": [
+      {
+        "id": "Q17479",
+        "name": "Flamengo"
+      },
+      {
+        "id": "Q478167",
+        "name": "Bodø/Glimt"
+      }
+    ]
+  },
+  "turkishBigFour": [
+    {
+      "id": "Q495299",
+      "name": "Galatasaray"
+    },
+    {
+      "id": "Q6601875",
+      "name": "Fenerbahçe"
+    },
+    {
+      "id": "Q172567",
+      "name": "Beşiktaş"
+    },
+    {
+      "id": "Q192641",
+      "name": "Trabzonspor"
+    }
+  ],
+  "worldTop30": [
+    {
+      "id": "Q9617",
+      "name": "Arsenal",
+      "rank": 1,
+      "rating": 100
+    },
+    {
+      "id": "Q15789",
+      "name": "Bayern Münih",
+      "rank": 2,
+      "rating": 99.1823666335
+    },
+    {
+      "id": "Q50602",
+      "name": "Manchester City",
+      "rank": 3,
+      "rating": 98.6064900452
+    },
+    {
+      "id": "Q7156",
+      "name": "Barcelona",
+      "rank": 4,
+      "rating": 98.236794924
+    },
+    {
+      "id": "Q483020",
+      "name": "PSG",
+      "rank": 5,
+      "rating": 96.7918505557
+    },
+    {
+      "id": "Q1130849",
+      "name": "Liverpool",
+      "rank": 6,
+      "rating": 95.8313600938
+    },
+    {
+      "id": "Q19453",
+      "name": "Brighton & Hove Albion",
+      "rank": 7,
+      "rating": 95.3896548984
+    },
+    {
+      "id": "Q8682",
+      "name": "Real Madrid",
+      "rank": 8,
+      "rating": 95.2788746874
+    },
+    {
+      "id": "Q9616",
+      "name": "Chelsea",
+      "rank": 9,
+      "rating": 94.3225367705
+    },
+    {
+      "id": "Q18711",
+      "name": "Aston Villa",
+      "rank": 10,
+      "rating": 94.1479325996
+    },
+    {
+      "id": "Q631",
+      "name": "Inter",
+      "rank": 11,
+      "rating": 93.7335356674
+    },
+    {
+      "id": "Q18656",
+      "name": "Manchester United",
+      "rank": 12,
+      "rating": 93.2037487642
+    },
+    {
+      "id": "Q8701",
+      "name": "Atletico Madrid",
+      "rank": 13,
+      "rating": 92.8117022226
+    },
+    {
+      "id": "Q19571",
+      "name": "Brentford",
+      "rank": 14,
+      "rating": 92.4079838147
+    },
+    {
+      "id": "Q41420",
+      "name": "Borussia Dortmund",
+      "rank": 15,
+      "rating": 92.2100228128
+    },
+    {
+      "id": "Q104761",
+      "name": "Bayer Leverkusen",
+      "rank": 16,
+      "rating": 92.2096814857
+    },
+    {
+      "id": "Q19568",
+      "name": "Bournemouth",
+      "rank": 17,
+      "rating": 92.2038789173
+    },
+    {
+      "id": "Q131499",
+      "name": "Benfica",
+      "rank": 18,
+      "rating": 92.1516551283
+    },
+    {
+      "id": "Q75729",
+      "name": "Sporting CP",
+      "rank": 19,
+      "rating": 91.9103176842
+    },
+    {
+      "id": "Q5794",
+      "name": "Everton",
+      "rank": 20,
+      "rating": 91.9034902224
+    },
+    {
+      "id": "Q1128631",
+      "name": "Leeds United",
+      "rank": 21,
+      "rating": 91.8109760654
+    },
+    {
+      "id": "Q18716",
+      "name": "Newcastle United",
+      "rank": 22,
+      "rating": 91.7375765088
+    },
+    {
+      "id": "Q190916",
+      "name": "Club Brugge",
+      "rank": 23,
+      "rating": 91.6908043737
+    },
+    {
+      "id": "Q2739",
+      "name": "Roma",
+      "rank": 24,
+      "rating": 91.4774154363
+    },
+    {
+      "id": "Q18741",
+      "name": "Tottenham",
+      "rank": 25,
+      "rating": 91.4589776757
+    },
+    {
+      "id": "Q17479",
+      "name": "Flamengo",
+      "rank": 26,
+      "rating": 91.3658305116
+    },
+    {
+      "id": "Q196160",
+      "name": "Union SG",
+      "rank": 27,
+      "rating": 91.0242803508
+    },
+    {
+      "id": "Q478167",
+      "name": "Bodø/Glimt",
+      "rank": 28,
+      "rating": 90.7776978093
+    },
+    {
+      "id": "Q1120838",
+      "name": "Como",
+      "rank": 29,
+      "rating": 90.6947005603
+    },
+    {
+      "id": "Q19490",
+      "name": "Nottingham Forest",
+      "rank": 30,
+      "rating": 90.5789090717
+    }
+  ]
+}

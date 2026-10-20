@@ -18,6 +18,19 @@ async function loadFootballCatalog(version) {
   return catalogPromise;
 }
 
+let lolCatalog = null, lolCatalogPromise = null;
+async function loadLolCatalog(version) {
+  if (lolCatalog && (!version || lolCatalog.version === version)) return lolCatalog;
+  if (!lolCatalogPromise) lolCatalogPromise = fetch('/api/lol' + (version ? '?v=' + encodeURIComponent(version) : '')).then(async (response) => {
+    if (!response.ok) throw new Error('Şampiyon verisi yüklenemedi.');
+    const catalog = await response.json();
+    if (!catalog.championCount || !Array.isArray(catalog.champions)) throw new Error('Şampiyon verisi geçersiz.');
+    return lolCatalog = catalog;
+  }).finally(() => { lolCatalogPromise = null; });
+  return lolCatalogPromise;
+}
+const isGridGame = (game) => game?.kind === 'xox' || game?.kind === 'lol-xox';
+
 let socket = null, current = null, playerId = localStorage.getItem("wg-player-id"), roomPass = "", myRole = null, currentGame = null, masterKeys = null, timerInterval = null, toastTimeout;
 let cityDraftRound = null, cityDraft = {}, cityMine = {}, citySaveTimer = null, roomPlayers = [], xoxInterval = null;
 let selectedCategory = categories[0], showMaster = false, cityStartedAt = 0, cityLetter = "", cityInterval = null;
@@ -87,7 +100,7 @@ $("#leaveRoom").onclick = () => { send({ type: "leave" }); if (current) localSto
 $$(".picker-card").forEach((card) => card.addEventListener("click", () => startGameMenu(card.dataset.game)));
 function startGameMenu(kind) {
   notice(""); $("#gamePicker").classList.add("hidden"); const view = $("#activeGame"); view.classList.remove("hidden");
-  if (kind === "spy") renderSpySetup(); else if (kind === "code") send({ type: "start-codenames" }); else if (kind === "city") startCity(); else if (kind === "xox") startXox();
+  if (kind === "spy") renderSpySetup(); else if (kind === "code") send({ type: "start-codenames" }); else if (kind === "city") startCity(); else if (kind === "xox") startXox(); else if (kind === "lol") startLol();
 }
 function gameHeader(title) { return `<div class="game-title-row"><h2>${title}</h2><button class="subtle-button" data-action="menu">Oyunlar</button></div>`; }
 async function renderSpySetup() {
@@ -151,13 +164,13 @@ function renderGame(game, master) {
   if (!game) { currentGame = null; clearInterval(cityInterval); clearInterval(xoxInterval); $("#playerDialog").close(); $("#activeGame").classList.add("hidden"); $("#gamePicker").classList.remove("hidden"); clearInterval(timerInterval); return; }
   if (game.kind !== "city") { clearInterval(cityInterval); clearTimeout(citySaveTimer); }
   clearInterval(xoxInterval);
-  if (game.kind !== "xox") $("#playerDialog").close();
+  if (!isGridGame(game)) $("#playerDialog").close();
   if (game.kind !== "spyfall") clearInterval(timerInterval);
   $("#gamePicker").classList.add("hidden"); $("#activeGame").classList.remove("hidden"); currentGame = game;
   if (game.kind === "spyfall") renderSpy(game);
   if (game.kind === "codenames") renderCodenames(game, masterKeys || master);
   if (game.kind === "city") renderCity(game);
-  if (game.kind === "xox") { currentGame = game; if (selectedXoxCell && (game.picks[selectedXoxCell] || game.boardId !== selectedXoxBoard || game.turnId !== selectedXoxTurn)) $("#playerDialog").close(); renderXox(); }
+  if (isGridGame(game)) { currentGame = game; if (selectedXoxCell && (game.picks[selectedXoxCell] || game.boardId !== selectedXoxBoard || game.turnId !== selectedXoxTurn)) $("#playerDialog").close(); if (game.kind === "lol-xox") renderLol(); else renderXox(); }
 }
 $("#activeGame").addEventListener("click", (e) => {
   const action = e.target.closest("[data-action]")?.dataset.action;
@@ -173,11 +186,12 @@ $("#activeGame").addEventListener("click", (e) => {
   if (action === "begin-code") { send({ type: "begin-code", gameId: currentGame.gameId }); return; }
   if (action === "new-code") { send({ type: "start-codenames" }); return; }
   if (action === "pass-code") { send({ type: "pass-code", turnId: currentGame.turnId }); return; }
-  if (action === "pass-xox") { send({ type: "pass-xox", boardId: currentGame.boardId, turnId: currentGame.turnId }); return; }
+  if (action === "pass-xox") { send({ type: currentGame.kind === "lol-xox" ? "pass-lol-xox" : "pass-xox", boardId: currentGame.boardId, turnId: currentGame.turnId }); return; }
   const codeTeam = e.target.closest("[data-code-team]"); if (codeTeam) { send({ type: "join-code-team", gameId: currentGame.gameId, team: codeTeam.dataset.codeTeam, role: codeTeam.dataset.codeRole }); return; }
   const review = e.target.closest("[data-city-review]"); if (review) { send({ type: "review-city", gameId: currentGame.gameId, targetId: review.dataset.cityReview, category: review.dataset.category, invalid: review.dataset.invalid !== "true" }); return; }
   if (action === "new-city") { send({ type: currentGame.match.finished ? "start-city" : "next-city", gameId: currentGame.gameId, restart: currentGame.match.finished }); return; }
   if (action === "new-xox") { if (currentGame.winner && !currentGame.series.finished) send({ type: "next-xox", boardId: currentGame.boardId }); else startXox(currentGame.mode, currentGame.series.finished); return; }
+  if (action === "new-lol") { if (currentGame.winner && !currentGame.series.finished) send({ type: "next-lol-xox", boardId: currentGame.boardId }); else startLol(currentGame.mode, currentGame.series.finished); return; }
   if (action === "submit-city") { submitCity(); return; }
   const mode = e.target.closest("[data-xox-mode]")?.dataset.xoxMode; if (mode) { startXox(mode); return; }
   const cat = e.target.closest("[data-category]")?.dataset.category; if (cat) { selectedCategory = cat; renderSpySetup(); return; }
@@ -283,6 +297,51 @@ function renderXox() {
     send({ type: 'start-xox', mode, topIds: changedTop, sideIds: changedSide });
   }));
 }
+async function startLol(mode = 'mixed', restart = false) {
+  try { await loadLolCatalog(); send({ type: 'start-lol-xox', mode, restart, boardId: currentGame?.boardId }); }
+  catch (error) { toast(error.message); if (!currentGame) renderGame(null); }
+}
+function renderLol() {
+  const game = currentGame;
+  if (!lolCatalog || lolCatalog.version !== game.dataVersion) {
+    $('#activeGame').innerHTML = gameHeader('LoL XOX') + '<p>Yükleniyor…</p>';
+    loadLolCatalog(game.dataVersion).then(() => {
+      if (currentGame?.kind !== 'lol-xox' || currentGame.boardId !== game.boardId) return;
+      if (lolCatalog.version !== game.dataVersion) { $('#activeGame').innerHTML = gameHeader('LoL XOX') + '<p>Şampiyon verisi yenilendi. Oyun menüsünden yeni seri başlat.</p>'; return; }
+      renderLol();
+    }).catch((error) => toast(error.message));
+    return;
+  }
+  const typeLabels = { region: 'Bölge', origin: 'Köken', species: 'Tür', lane: 'Koridor', class: 'Sınıf' };
+  const attributes = new Map(lolCatalog.attributes.map((attribute) => [attribute.id, attribute]));
+  const champions = new Map(lolCatalog.champions.map((champion) => [champion.id, champion]));
+  const label = (id) => { const attribute = attributes.get(id); return '<div class="xox-label"><small>' + typeLabels[attribute.type] + '</small><span>' + escapeHTML(attribute.label) + '</span></div>'; };
+  const canPick = !game.winner && game.teams[game.turn].includes(playerId);
+  const participant = Object.values(game.teams).flat().includes(playerId);
+  const cells = game.sideIds.map((id, row) => label(id) + game.topIds.map((top, column) => {
+    const key = row + '-' + column, picked = game.picks[key], champion = champions.get(game.pickedChampionIds?.[key]);
+    return '<button class="xox-cell ' + (picked ? 'filled owner-' + game.owners[key] : '') + (game.winningLine?.includes(key) ? ' winning-cell' : '') + '" data-xox-cell="' + key + '" aria-label="' + escapeHTML(game.side[row] + ' ve ' + game.top[column]) + '"' + (picked || !canPick ? ' disabled' : '') + '>' + (champion ? '<img class="lol-photo" src="' + escapeHTML(champion.icon) + '" width="48" height="48" alt="" referrerpolicy="no-referrer">' : '') + '<span>' + escapeHTML(picked ? game.owners[key] + ' · ' + picked : '+') + '</span></button>';
+  }).join('')).join('');
+  const teams = ['X','O'].map((team) => '<span class="chip">' + team + ': ' + game.teams[team].map((id) => escapeHTML(game.names[id])).join(', ') + '</span>').join('');
+  const status = game.winner ? game.winner === 'draw' ? 'Berabere' : game.winner + ' kazandı' : 'Sıra: ' + game.turn;
+  const configure = participant && !game.series.history.length && !Object.keys(game.picks).length && !game.winner;
+  const mode = configure ? '<select id="lolMode" aria-label="Tahta türü">' + lolCatalog.modes.map((mode) => '<option value="' + mode.id + '"' + (mode.id === game.mode ? ' selected' : '') + '>' + escapeHTML(mode.label) + '</option>').join('') + '</select>' : '';
+  const footer = (canPick ? '<button class="subtle-button" data-action="pass-xox">Pas geç</button>' : '') + (game.winner && participant ? '<button class="start-button" data-action="new-lol">' + (game.series.finished ? 'Yeni seri' : game.winner === 'draw' ? 'Tekrar oyna' : 'Sonraki tahta') + '</button>' : '');
+  const credits = '<details class="media-credits"><summary>Kaynaklar</summary><p>Şampiyonlar, sınıflar ve görseller: <a href="https://developer.riotgames.com/docs/lol#data-dragon" target="_blank" rel="noopener noreferrer">Riot Data Dragon</a> · ' + escapeHTML(lolCatalog.patch) + '. Bölge, köken, tür ve koridorlar: <a href="https://wiki.leagueoflegends.com/en-us/Module:ChampionData/data" target="_blank" rel="noopener noreferrer">LoL Wiki</a> ve <a href="https://wiki.leagueoflegends.com/en-us/Universe:Main_Page" target="_blank" rel="noopener noreferrer">karakter biyografileri</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>; çeviri ve tür gruplaması uygulandı).</p><p>Bölge güncel bağlılığı, köken doğum yerini belirtir. Türlerde üst gruplar kullanılır; eski türler sayılmaz. Koridorlar Wiki’nin önerilen listesidir.</p></details><p class="riot-credit">Riot Games tarafından onaylanmamıştır. League of Legends ve ilgili görseller Riot Games’e aittir.</p>';
+  $('#activeGame').innerHTML = gameHeader('LoL XOX') + '<div class="code-score"><span class="chip">Best of 3</span><span class="chip">X <b>' + game.series.scores.X + '</b> – <b>' + game.series.scores.O + '</b> O</span>' + (game.series.finished ? '<span class="chip score-winner">Seriyi ' + game.series.winner + ' kazandı</span>' : '') + '</div>' + mode + '<div class="code-score lol-turn">' + teams + '<span class="chip">' + status + '</span>' + (!game.winner ? '<b id="xoxTimer"></b>' : '') + '</div><div class="xox-board"><div></div>' + game.topIds.map(label).join('') + cells + '</div><div class="active-foot">' + footer + '</div>' + credits;
+  $('#lolMode')?.addEventListener('change', (event) => startLol(event.target.value));
+  for (const image of $$('.lol-photo')) image.addEventListener('error', () => { image.hidden = true; }, { once: true });
+  clearInterval(xoxInterval);
+  if (!game.winner) {
+    const clock = () => {
+      if (currentGame?.kind !== 'lol-xox') return;
+      const left = Math.max(0, Math.ceil((currentGame.deadline - Date.now()) / 1000)); const el = $('#xoxTimer'); if (el) el.textContent = left + ' sn';
+      if (!left) { $('#playerDialog').close(); for (const button of $$('[data-xox-cell]')) button.disabled = true; }
+    };
+    clock(); xoxInterval = setInterval(clock, 250);
+  }
+}
+
 const footballMedia = new Map();
 const footballMediaPending = new Set();
 function footballImage(id, className) {
@@ -326,10 +385,14 @@ function hydrateFootballMedia() {
     });
   }
 }
-let selectedXoxCell = null, selectedXoxBoard = null, selectedXoxTurn = null;
+let selectedXoxCell = null, selectedXoxBoard = null, selectedXoxTurn = null, selectedXoxKind = null;
 function selectFootballer(key) {
-  if (currentGame?.kind !== 'xox' || currentGame.picks[key] || currentGame.winner || !currentGame.teams?.[currentGame.turn]?.includes(playerId) || Date.now() >= currentGame.deadline) return;
-  selectedXoxCell = key; selectedXoxBoard = currentGame.boardId; selectedXoxTurn = currentGame.turnId;
+  if (!isGridGame(currentGame) || currentGame.picks[key] || currentGame.winner || !currentGame.teams?.[currentGame.turn]?.includes(playerId) || Date.now() >= currentGame.deadline) return;
+  selectedXoxCell = key; selectedXoxBoard = currentGame.boardId; selectedXoxTurn = currentGame.turnId; selectedXoxKind = currentGame.kind;
+  const lol = currentGame.kind === 'lol-xox';
+  $('#playerDialog h2').textContent = lol ? 'Şampiyon seç' : 'Futbolcu seç';
+  $('#playerSearch').placeholder = lol ? 'Şampiyon ara' : 'Futbolcu ara';
+  $('#playerSearch').setAttribute('aria-label', lol ? 'Şampiyon ara' : 'Futbolcu ara');
   $("#playerSearch").value = '';
   renderPlayerResults();
   $("#playerDialog").showModal();
@@ -344,11 +407,11 @@ async function renderPlayerResults() {
   searchController = new AbortController();
   $("#playerResults").innerHTML = '<p class="empty-results">Aranıyor…</p>';
   try {
-    const response = await fetch('/api/football/search?q=' + encodeURIComponent(query) + '&v=' + encodeURIComponent(currentGame?.dataVersion || ''), { signal: searchController.signal });
+    const response = await fetch((currentGame?.kind === 'lol-xox' ? '/api/lol/search?q=' : '/api/football/search?q=') + encodeURIComponent(query) + '&v=' + encodeURIComponent(currentGame?.dataVersion || ''), { signal: searchController.signal });
     if (!response.ok) throw new Error('Arama yüklenemedi.');
     const data = await response.json();
     if (sequence !== searchSequence) return;
-    $("#playerResults").innerHTML = data.players.map((p) => '<button type="button" class="player-result" data-player="' + escapeHTML(p.id) + '">' + escapeHTML(p.name) + '</button>').join('') || '<p class="empty-results">Futbolcu bulunamadı.</p>';
+    $("#playerResults").innerHTML = data.players.map((p) => '<button type="button" class="player-result" data-player="' + escapeHTML(p.id) + '">' + escapeHTML(p.name) + '</button>').join('') || '<p class="empty-results">Sonuç bulunamadı.</p>';
   } catch (error) {
     if (error.name !== 'AbortError' && sequence === searchSequence) $("#playerResults").innerHTML = '<p class="empty-results">Arama yüklenemedi. Tekrar dene.</p>';
   }
@@ -359,8 +422,8 @@ $("#playerSearchForm").addEventListener('submit', (event) => event.preventDefaul
 $("#closePlayerDialog").onclick = () => $("#playerDialog").close();
 $("#playerResults").addEventListener('click', (event) => {
   const playerId = event.target.closest('[data-player]')?.dataset.player;
-  if (!playerId || !selectedXoxCell || currentGame?.kind !== 'xox') return;
-  send({ type: 'pick-xox', key: selectedXoxCell, playerId, boardId: selectedXoxBoard, turnId: selectedXoxTurn });
+  if (!playerId || !selectedXoxCell || !isGridGame(currentGame) || currentGame.kind !== selectedXoxKind || currentGame.boardId !== selectedXoxBoard || currentGame.turnId !== selectedXoxTurn) return;
+  send({ type: currentGame.kind === 'lol-xox' ? 'pick-lol-xox' : 'pick-xox', key: selectedXoxCell, ...(currentGame.kind === 'lol-xox' ? { championId: playerId } : { playerId }), boardId: selectedXoxBoard, turnId: selectedXoxTurn });
 });
 
 

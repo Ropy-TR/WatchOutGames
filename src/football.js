@@ -1,7 +1,9 @@
 import data from './data/football.json' with { type: 'json' };
+import { sampleFootballClubs, drawFootballPlan, allowedFootballClubIds } from './football-priority.js';
 
 const players = new Map(data.players.map((player) => [player.id, player]));
-const clubs = new Map(data.clubs.map((club) => [club.id, club]));
+const clubs = new Map(data.clubs.filter((club) => allowedFootballClubIds.has(club.id)).map((club) => [club.id, club]));
+const dataVersion = (data.datasetId || data.fetchedAt) + ':clubs-v3';
 const countryCounts = new Map();
 const pairs = new Map();
 const pairKey = (club, type, side) => `${club}:${type}:${side}`;
@@ -40,8 +42,8 @@ const countries = new Map(data.countries.filter((c) => (countryCounts.get(c.id) 
 
 export function footballCatalog() {
   return {
-    fetchedAt: data.fetchedAt, version: data.datasetId || data.fetchedAt, source: data.source, license: data.license,
-    clubs: data.clubs, countries: [...countries.values()], leagues: data.leagues || [],
+    fetchedAt: data.fetchedAt, version: dataVersion, source: data.source, license: data.license,
+    clubs: [...clubs.values()], countries: [...countries.values()], leagues: (data.leagues || []).map((league) => ({ ...league, clubCount: [...clubs.values()].filter((club) => club.league === league.id).length })).filter((league) => league.clubCount),
     playerCount: data.players.length
   };
 }
@@ -90,7 +92,7 @@ export function createFootballBoard(options, randomIndex) {
   const mode = options.mode === 'countries' ? 'countries' : 'clubs';
   const sideCatalog = mode === 'countries' ? countries : clubs;
   function finish(topIds, sideIds) {
-    const game = { kind: 'xox', mode, topIds, sideIds, picks: {}, playerPicks: {}, boardId: crypto.randomUUID(), dataVersion: data.datasetId || data.fetchedAt };
+    const game = { kind: 'xox', mode, topIds, sideIds, picks: {}, playerPicks: {}, boardId: crypto.randomUUID(), dataVersion };
     game.top = topIds.map((id) => clubs.get(id).name);
     game.side = sideIds.map((id) => sideCatalog.get(id).name);
     if (!boardHasSolution(game)) throw new Error('Bu seçimlerle dokuz farklı cevap bulunamıyor.');
@@ -106,21 +108,36 @@ export function createFootballBoard(options, randomIndex) {
     }
     return finish([...topIds], [...sideIds]);
   }
-  for (let attempt = 0; attempt < 400; attempt++) {
-    const topIds = shuffled([...clubs.keys()], randomIndex).slice(0, 3);
-    const eligible = [...sideCatalog.keys()].filter((id) =>
+  // Draw percentages once per board; failed solvability attempts keep this plan.
+  const plan = drawFootballPlan(mode, randomIndex);
+  // Some domestic clubs have no recorded overseas career intersections.
+  // Retain them in the manual catalog, but only draw solvable random grids.
+  if (plan.turkishId && mode === 'clubs') {
+    plan.turkishCandidates = plan.turkishCandidates.filter((id) => plan.pool.filter((other) => (pairs.get(pairKey(id, 'club', other)) || []).length).length >= 3);
+    if (!plan.turkishCandidates.includes(plan.turkishId)) plan.turkishId = plan.turkishCandidates[randomIndex(plan.turkishCandidates.length)];
+    if (!plan.turkishId) throw new Error('Bu havuzda Türk takımlı tahta için yeterli kariyer verisi bulunamadı.');
+  }
+  for (let attempt = 0; attempt < 1500; attempt++) {
+    if (attempt > 0 && attempt % 100 === 0 && plan.turkishCandidates.length > 1) plan.turkishId = plan.turkishCandidates[randomIndex(plan.turkishCandidates.length)];
+    const topPool = plan.slot >= 3 ? plan.pool.filter((id) => (pairs.get(pairKey(id, 'club', plan.turkishId)) || []).length) : plan.pool;
+    const topIds = sampleFootballClubs(topPool, plan.slot >= 0 && plan.slot < 3 ? 2 : 3, randomIndex);
+    if (plan.slot >= 0 && plan.slot < 3) topIds.splice(plan.slot, 0, plan.turkishId);
+    const sidePool = mode === 'countries' ? [...countries.keys()] : [...plan.pool, ...(plan.slot >= 3 ? [plan.turkishId] : [])];
+    const eligible = sidePool.filter((id) =>
       !(mode === 'clubs' && topIds.includes(id)) &&
       topIds.every((top) => (pairs.get(pairKey(top, mode === 'countries' ? 'country' : 'club', id)) || []).length > 0)
     );
     if (eligible.length < 3) continue;
-    const sideIds = shuffled(eligible, randomIndex).slice(0, 3);
-    try { return finish(topIds, sideIds); } catch { /* Try a different solvable board. */ }
+    if (plan.slot >= 3 && !eligible.includes(plan.turkishId)) continue;
+    const sideIds = mode === 'clubs' ? sampleFootballClubs(eligible.filter((id) => id !== plan.turkishId), plan.slot >= 3 ? 2 : 3, randomIndex) : shuffled(eligible, randomIndex).slice(0, 3);
+    if (plan.slot >= 3) sideIds.splice(plan.slot - 3, 0, plan.turkishId);
+    try { return { ...finish(topIds, sideIds), selectionProfile: plan.profile }; } catch { /* Keep the same pool and Turkish slot. */ }
   }
   throw new Error('Tahta hazırlanamadı. Yeniden dene.');
 }
 
 export function validateFootballPick(game, { boardId, key, playerId }) {
-  if (game?.dataVersion !== (data.datasetId || data.fetchedAt)) throw new Error('Futbolcu verisi yenilendi. Yeni tahta başlat.');
+  if (game?.dataVersion !== dataVersion) throw new Error('Futbolcu verisi yenilendi. Yeni tahta başlat.');
   if (!game?.boardId || boardId !== game.boardId) throw new Error('Tahta değişti. Hücreyi yeniden seç.');
   if (!/^[0-2]-[0-2]$/.test(String(key))) throw new Error('Geçersiz hücre.');
   if (game.picks[key]) throw new Error('Bu hücre zaten dolduruldu.');

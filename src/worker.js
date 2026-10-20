@@ -2,7 +2,10 @@ export { Room } from './room.js';
 import { SPY_CATEGORIES } from './game-data.js';
 import { footballCatalog, searchFootballPlayers, footballMediaKind } from './football.js';
 import { lookupFootballMedia } from './football-media.js';
+import { lolCatalog, searchLolChampions } from './lol.js';
+import { RELEASE } from './release.js';
 const footballCatalogBody = JSON.stringify(footballCatalog());
+const lolCatalogBody = JSON.stringify(lolCatalog());
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*" }
@@ -18,7 +21,16 @@ function code() {
 export default {
   async fetch(request, env, context) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/games' && request.method === 'GET') return json({ spyCategories: Object.keys(SPY_CATEGORIES) });
+    if (url.pathname === '/api/version' && request.method === 'GET') {
+      const response = json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol'] });
+      response.headers.set('cache-control', 'no-store'); return response;
+    }
+    if (url.pathname === '/api/games' && request.method === 'GET') return json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol'], spyCategories: Object.keys(SPY_CATEGORIES) });
+    if (url.pathname === '/api/lol' && request.method === 'GET') return new Response(lolCatalogBody, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' } });
+    if (url.pathname === '/api/lol/search' && request.method === 'GET') {
+      const response = json({ players: searchLolChampions(url.searchParams.get('q')) });
+      response.headers.set('cache-control', 'public, max-age=300'); return response;
+    }
     if (url.pathname === '/api/football/media' && request.method === 'GET') {
       const ids = [...new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean))];
       if (!ids.length || ids.length > 8 || ids.some((id) => !footballMediaKind(id))) return json({ error: 'Geçersiz görsel isteği.' }, 400);

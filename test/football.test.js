@@ -44,7 +44,7 @@ test('snapshot uses real Wikidata IDs, positive appearances and known careers', 
 
 test('catalog contains every selected season club from all eleven leagues', () => {
   assert.equal(data.clubs.length, clubConfig.length);
-  assert.equal(data.leagues.length, 11);
+  assert.equal(data.leagues.length, leagueConfig.leagues.length);
   assert.ok(data.clubs.length >= 190);
   assert.equal(data.catalogHash.length, 64);
   for (const league of leagueConfig.leagues) {

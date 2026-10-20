@@ -998,5 +998,15 @@
     "id": "Q192641",
     "name": "Trabzonspor",
     "league": "turkey"
+  },
+  {
+    "id": "Q17479",
+    "name": "Flamengo",
+    "league": "world-elite"
+  },
+  {
+    "id": "Q478167",
+    "name": "Bodø/Glimt",
+    "league": "world-elite"
   }
 ]

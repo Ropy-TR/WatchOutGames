@@ -8,6 +8,7 @@
     "test": "node --test test/*.test.js",
     "data:update": "node scripts/update-football.mjs",
     "clubs:update": "node scripts/update-clubs.mjs",
+    "lol:update": "node scripts/update-lol.mjs",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

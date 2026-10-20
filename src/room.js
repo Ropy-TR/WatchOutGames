@@ -1,8 +1,10 @@
 import { createFootballBoard, footballCatalog, validateFootballPick, hasAvailableFootballMove } from './football.js';
+import { createLolBoard, lolDataVersion, validateLolPick, hasAvailableLolMove } from './lol.js';
 import { cleanAnswers, finishCity, cityScores, createCodeLobby, beginCode, pickCode, endCodeTurn, secureIndex, advanceXox, expireXox, xoxOutcome } from './game-rules.js';
 import { createSpyMatch, beginSpyVote, resolveSpyVote, beginSpyGuess, submitSpyGuess, nextSpyRound, expireSpy, publicSpy, createCityMatch, cityMatchView, nextCityRound, createXoxSeries, recordXoxResult } from './match-rules.js';
 
 const dataVersion = footballCatalog().version;
+const isXox = (game) => game?.kind === 'xox' || game?.kind === 'lol-xox';
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 export class Room {
   constructor(state) { this.state = state; this.storage = state.storage; this.clients = new Map(); this.queue = Promise.resolve(); }
@@ -13,7 +15,7 @@ export class Room {
     if (!room) return room;
     // Rooms created before turn/role validation was introduced need a fresh game.
     const game = room.game;
-    if (game && (game.kind === 'xox' ? !game.turnId || !game.teams || !game.series : !game.gameId || (['spyfall', 'city'].includes(game.kind) && !game.match))) {
+    if (game && (isXox(game) ? !game.turnId || !game.teams || !game.series : !game.gameId || (['spyfall', 'city'].includes(game.kind) && !game.match))) {
       room.game = null;
       await this.storage.put('room', room);
       await this.schedule(null);
@@ -139,32 +141,33 @@ export class Room {
         if (game.phase !== 'playing' || msg.turnId !== game.turnId || !game.clue || !game.guessesMade || game.assignments[playerId]?.role !== 'guesser' || game.assignments[playerId]?.team !== game.turn) throw new Error('En az bir tahminden sonra sıra geçilebilir.');
         endCodeTurn(game);
       }
-      else if (msg.type === 'start-xox') {
-        if (active.length < 2) throw new Error('Futbol XOX için en az 2 oyuncu gerekli.');
-        const existing = game?.kind === 'xox';
+      else if (msg.type === 'start-xox' || msg.type === 'start-lol-xox') {
+        const kind = msg.type === 'start-lol-xox' ? 'lol-xox' : 'xox';
+        if (active.length < 2) throw new Error('XOX için en az 2 oyuncu gerekli.');
+        const existing = game?.kind === kind;
         const reconfigure = existing && !game.series.finished && !game.series.history.length && !Object.keys(game.picks).length && !game.winner;
         if (existing && (!reconfigure && (!game.series.finished || !msg.restart || msg.boardId !== game.boardId))) throw new Error('Devam eden seri için sonraki tahtayı kullan.');
         if (reconfigure && !Object.values(game.teams).flat().includes(playerId)) throw new Error('Bu seride oyuncu değilsin.');
-        const board = createFootballBoard(msg, secureIndex);
+        const board = (kind === 'lol-xox' ? createLolBoard : createFootballBoard)(msg, secureIndex);
         room.game = { ...board, owners: {}, series: reconfigure ? game.series : createXoxSeries(), teams: reconfigure ? game.teams : { X: active.filter((_, i) => i % 2 === 0).map((m) => m.id), O: active.filter((_, i) => i % 2 === 1).map((m) => m.id) }, names: reconfigure ? game.names : Object.fromEntries(active.map((m) => [m.id, m.nickname])), turn: secureIndex(2) ? 'X' : 'O', turnId: crypto.randomUUID(), deadline: Date.now() + 30000, round: 1 };
       }
-      else if (msg.type === 'next-xox' && game?.kind === 'xox') {
+      else if ((msg.type === 'next-xox' && game?.kind === 'xox') || (msg.type === 'next-lol-xox' && game?.kind === 'lol-xox')) {
         if (msg.boardId !== game.boardId || !game.winner || game.series.finished || !Object.values(game.teams).flat().includes(playerId)) throw new Error('Sonraki tahta başlatılamaz.');
         if (Object.values(game.teams).some((team) => !team.some((id) => connected.has(id)))) throw new Error('Her iki takımdan en az bir oyuncu bağlı olmalı.');
-        room.game = { ...createFootballBoard({ mode: game.mode }, secureIndex), owners: {}, series: structuredClone(game.series), teams: game.teams, names: game.names, turn: game.turn === 'X' ? 'O' : 'X', turnId: crypto.randomUUID(), deadline: Date.now() + 30000, round: game.round + 1 };
+        room.game = { ...(game.kind === 'lol-xox' ? createLolBoard : createFootballBoard)({ mode: game.mode }, secureIndex), owners: {}, series: structuredClone(game.series), teams: game.teams, names: game.names, turn: game.turn === 'X' ? 'O' : 'X', turnId: crypto.randomUUID(), deadline: Date.now() + 30000, round: game.round + 1 };
       }
-      else if ((msg.type === 'pick-xox' || msg.type === 'pass-xox') && game?.kind === 'xox') {
+      else if ((['pick-xox', 'pass-xox'].includes(msg.type) && game?.kind === 'xox') || (['pick-lol-xox', 'pass-lol-xox'].includes(msg.type) && game?.kind === 'lol-xox')) {
         if (game.winner) throw new Error('Oyun bitti. Yeni tahta başlat.');
         if (msg.boardId !== game.boardId || msg.turnId !== game.turnId) throw new Error('Tahta veya sıra değişti.');
         if (!game.teams?.[game.turn]?.includes(playerId)) throw new Error('Sıra senin takımında değil.');
-        if (msg.type === 'pick-xox') {
+        if (msg.type === 'pick-xox' || msg.type === 'pick-lol-xox') {
           if (!/^[0-2]-[0-2]$/.test(String(msg.key)) || game.picks[msg.key]) throw new Error('Bu hücre seçilemez.');
           try {
-            const player = validateFootballPick(game, msg);
+            const player = game.kind === 'lol-xox' ? validateLolPick(game, msg) : validateFootballPick(game, msg);
             game.picks[msg.key] = player.name; game.playerPicks[msg.key] = player.id; game.owners[msg.key] = game.turn;
             const outcome = xoxOutcome(game.owners);
             if (outcome) Object.assign(game, outcome);
-            else if (!hasAvailableFootballMove(game)) Object.assign(game, { winner: 'draw', winningLine: [] });
+            else if (!(game.kind === 'lol-xox' ? hasAvailableLolMove : hasAvailableFootballMove)(game)) Object.assign(game, { winner: 'draw', winningLine: [] });
           } catch (error) { this.sendError(socket, error.message + ' Sıra diğer takımda.'); }
         }
         if (game.winner) recordXoxResult(game);
@@ -180,7 +183,7 @@ export class Room {
     this.sendGame(room);
   }
   async schedule(game) {
-    const deadline = game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game?.kind === 'xox' && !game.winner && this.clients.size > 0 ? game.deadline : null;
+    const deadline = game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
     if (deadline && this.storage.setAlarm) await this.storage.setAlarm(deadline);
     else if (this.storage.deleteAlarm) await this.storage.deleteAlarm();
   }
@@ -190,7 +193,7 @@ export class Room {
     let changed = false;
     if (game.kind === 'spyfall') changed = expireSpy(game);
     if (game.kind === 'city' && game.phase === 'playing' && Date.now() >= game.startedAt + game.duration * 1000) { finishCity(game); changed = true; }
-    if (game.kind === 'xox' && game.deadline) changed = expireXox(game) || changed;
+    if (isXox(game) && game.deadline) changed = expireXox(game) || changed;
     if (changed) await this.save(room);
   }
   alarm() { return this.enqueue(async () => { const room = await this.loadRoom(); if (room) { await this.expire(room); await this.schedule(room.game); } }); }
@@ -207,7 +210,7 @@ export class Room {
     if (!game) return null;
     if (game.kind === 'spyfall') return publicSpy(game);
     if (game.kind === 'city') return { kind: game.kind, gameId: game.gameId, phase: game.phase, letter: game.letter, categories: game.categories, startedAt: game.startedAt, duration: game.duration, names: game.names, match: cityMatchView(game), submittedIds: Object.keys(game.submissions), ...(game.phase === 'results' ? { submissions: game.submissions, scores: cityScores(game), invalid: game.invalid } : {}) };
-    if (game.kind === 'xox') return game.boardId && game.dataVersion === dataVersion ? { kind: game.kind, top: game.top, side: game.side, topIds: game.topIds, sideIds: game.sideIds, picks: game.picks, pickedPlayerIds: game.playerPicks, round: game.round, boardId: game.boardId, mode: game.mode, dataVersion: game.dataVersion, teams: game.teams, names: game.names, owners: game.owners, turn: game.turn, turnId: game.turnId, deadline: game.deadline, winner: game.winner, winningLine: game.winningLine, series: game.series } : null;
+    if (isXox(game)) return game.boardId && game.dataVersion === (game.kind === 'lol-xox' ? lolDataVersion : dataVersion) ? { kind: game.kind, top: game.top, side: game.side, topIds: game.topIds, sideIds: game.sideIds, picks: game.picks, ...(game.kind === 'lol-xox' ? { pickedChampionIds: game.playerPicks } : { pickedPlayerIds: game.playerPicks }), round: game.round, boardId: game.boardId, mode: game.mode, dataVersion: game.dataVersion, teams: game.teams, names: game.names, owners: game.owners, turn: game.turn, turnId: game.turnId, deadline: game.deadline, winner: game.winner, winningLine: game.winningLine, series: game.series } : null;
     if (game.kind === 'codenames') return { kind: game.kind, gameId: game.gameId, phase: game.phase, assignments: game.assignments, names: game.phase === 'lobby' ? Object.fromEntries(members.map((m) => [m.id, m.nickname])) : game.names, words: game.words, revealed: game.revealed, colors: Object.fromEntries(game.keys.flatMap((key, i) => game.winner || game.revealed.includes(i) ? [[i, key]] : [])), turn: game.turn, turnId: game.turnId, scores: game.scores, targets: game.targets, winner: game.winner, clue: game.clue, guessesLeft: game.guessesLeft, guessesMade: game.guessesMade };
     return null;
   }

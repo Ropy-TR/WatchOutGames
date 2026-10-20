@@ -90,6 +90,23 @@
       "page": "2026–27 Süper Lig",
       "clubCount": 18,
       "source": "https://en.wikipedia.org/wiki/2026%E2%80%9327_S%C3%BCper_Lig"
+    },
+    {
+      "id": "world-elite",
+      "name": "Dünya ilk 30 ek kulüpleri",
+      "country": "Brezilya / Norveç",
+      "clubCount": 2,
+      "source": "https://theanalyst.com/articles/who-are-the-best-football-team-in-the-world-opta-power-rankings",
+      "clubs": [
+        {
+          "id": "Q17479",
+          "name": "Flamengo"
+        },
+        {
+          "id": "Q478167",
+          "name": "Bodø/Glimt"
+        }
+      ]
     }
   ],
   "clubsFetchedAt": "2026-10-19T22:50:50.296Z",

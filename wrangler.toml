@@ -3,7 +3,7 @@ main = "src/worker.js"
 compatibility_date = "2026-10-19"
 
 [build]
-command = "node scripts/update-football.mjs --if-stale --allow-stale-on-error"
+command = "node scripts/update-data.mjs"
 
 [assets]
 directory = "./public"
