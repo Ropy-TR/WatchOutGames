@@ -62,6 +62,11 @@ export class Room {
       await this.storage.put('room', room);
       await this.schedule(null);
     }
+    if (room.game?.kind === 'flags' && room.game.inputMode !== 'country-search') {
+      room.game = null;
+      await this.storage.put('room',room);
+      await this.schedule(null);
+    }
     if (room.game?.kind === 'hockey') {
       this.hockeyRoom = room;
       if (room.game.phase === 'playing') { room.game.phase = 'paused'; room.game.pausedAt = Date.now(); }

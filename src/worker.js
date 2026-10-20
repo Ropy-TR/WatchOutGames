@@ -6,6 +6,7 @@ import { lookupFootballMedia } from './football-media.js';
 import { lolCatalog, searchLolChampions } from './lol.js';
 import { RELEASE } from './release.js';
 import { WHO_CATEGORIES } from './whoami.js';
+import { flagCountryCatalog } from './flag-data.js';
 const footballCatalogBody = JSON.stringify(footballCatalog());
 const lolCatalogBody = JSON.stringify(lolCatalog());
 
@@ -23,6 +24,9 @@ function code() {
 export default {
   async fetch(request, env, context) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/flags/countries' && request.method === 'GET') {
+      const response = json({ countries: flagCountryCatalog() }); response.headers.set('cache-control','public, max-age=3600'); return response;
+    }
     if (url.pathname === '/api/version' && request.method === 'GET') {
       const response = json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey', 'battleship', 'quiz-football', 'quiz-lol', 'flags'] });
       response.headers.set('cache-control', 'no-store'); return response;

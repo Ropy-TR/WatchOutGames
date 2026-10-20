@@ -4,7 +4,7 @@ Oda kodu ve şifresiyle oynanan mini oyun sitesi. Arayüz Cloudflare Workers sta
 
 ## Kurulum yapmadan GitHub ile yayınlama
 
-Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.7` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.7` ve oyun listesinde `hockey` döndürmeli.
+Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.9` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.9` ve oyun listesinde `hockey` döndürmeli.
 
 ## Yerelde çalıştırma
 
@@ -188,3 +188,17 @@ Her anlatım 60 saniyedir. Doğru +1, tabu −1; üç pas ücretsizdir, dördün
 - Oyun ekranındaki bayrak isteği ülke kodunu içermez. Güncel oda/maç/tur kimliğiyle sunucudan sadece o turun SVG görseli gönderilir.
 
 Bu dört kart mevcut Room binding'ini kullanır; yeni Cloudflare binding veya migration gerekmez. Güncel ZIP'in tamamı yüklenmelidir; `src/data/flags.json`, `public/table-games.js` ve `public/table-games.css` özellikle gereklidir.
+
+## Bayrakta ülke arama — 2026.10.21.8
+
+- Bayrak Yarışı artık çoktan seçmeli değildir. Ülke adını yazıp arama sonuçlarından seçerek cevap verilir. Dokunma/tıklama veya yön tuşları + Enter ile seçim yapılır; seçim bir kez kilitlenir.
+- Tur süresi 30 saniyedir. 15 tur, yanlış/cevapsız cevaba bir hata, ortak bayraklar ve en az yanlışla kazanma kuralları korunur. Futbol ve LoL Bilgi Düellosu dört seçenekli kalır.
+- Türkçe karakter yazmadan arama yapılabilir; Türkiye/Turkiye, ABD/USA, İngiltere/Britanya/UK gibi arama takma adları desteklenir. Sonuçlar 121 ülkeden filtrelenir; ülke kodu ve adından oluşan liste doğru bayrağı belirtmez. Doğru ülke ortak tur sonucu açılana kadar gönderilmez.
+- Arama metni, imleç ve odak diğer oyuncular cevap verdiğinde korunur; her yeni soruda sıfırlanır. Yanlış veya listede olmayan serbest metin gönderilmez; cevap için listeden seçim gerekir.
+- Eski dört seçenekli Bayrak Yarışı kayıtları bu sürümde oyun menüsüne döner; güncellemeden sonra yeni Bayrak Yarışı başlatılır.
+
+## Hokeyde basmadan fare kontrolü — 2026.10.21.9
+
+- Masa üzerinde fareyi hareket ettirmek yeterlidir; tıklamak veya basılı tutmak gerekmez. Fare konumu masaya birebir eşlenir. Göreli mesafe çarpanı ve sürükleme başlangıcı kaldırıldı; kenarlara ulaşmak için basılı tutup yeniden konumlama gerekmez.
+- Çok küçük imleç titreşimleri filtrelenir. Mobilde bir noktaya dokunarak hedef verilebilir veya parmak sürüklenebilir. Yön/WASD tuşları çalışır.
+- Sunucu fiziği, hız/ivme sınırları, raket/disk boyutları ve çarpışma hesapları bu sürümde değiştirilmedi. Yalnızca istemci kontrolü ve kontrol metinleri güncellendi.

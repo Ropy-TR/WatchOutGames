@@ -13,6 +13,8 @@ if (!html.includes(`/modern.css?v=${RELEASE}`)) throw new Error('Güncel arayüz
 if (!html.includes('data-game="hockey"') || !html.includes(`/hockey.js?v=${RELEASE}`)) throw new Error('Hava Hokeyi kartı veya oyun dosyası eksik.');
 if (!html.includes(`/preferences.js?v=${RELEASE}`) || !html.includes('id="lobbyBrowser"')) throw new Error('Tema, ses veya açık lobiler dosyaları eksik.');
 const app = await readFile(new URL('public/app.js', root), 'utf8');
+const tableGames = await readFile(new URL('public/table-games.js',root),'utf8');
+if (!tableGames.includes('flagCountrySearch') || !tableGames.includes('/api/flags/countries')) throw new Error('Bayrak ülke arama arayüzü eksik.');
 if (!app.includes('start-lol-xox')) throw new Error('public/app.js LoL sürümü değil.');
 if (!app.includes('start-whoami')) throw new Error('public/app.js Kimim Ben? sürümü değil.');
 if (!app.includes('start-tabu')) throw new Error('public/app.js Tabu sürümü değil.');

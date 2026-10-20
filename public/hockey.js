@@ -19,9 +19,9 @@
     }
     if (!scene || scene.game.gameId !== game.gameId || !document.querySelector('#hockeyCanvas')) {
       destroy();
-      root.innerHTML = header + '<div class="hockey-score"><span id="hockeyMe"></span><strong id="hockeyScore"></strong><span id="hockeyThem"></span></div><div class="hockey-table-wrap"><canvas id="hockeyCanvas" width="960" height="1520" tabindex="0" aria-label="Hava hokeyi masası. Raketi basılı tutup sürükleyerek veya yön tuşlarıyla kontrol et."></canvas><div id="hockeyOverlay" class="hockey-overlay" role="status"></div></div><div class="hockey-footer"><span id="hockeyStatus"></span><button class="start-button hidden" id="hockeyRematch" data-action="restart-hockey">Tekrar oyna</button></div>';
+      root.innerHTML = header + '<div class="hockey-score"><span id="hockeyMe"></span><strong id="hockeyScore"></strong><span id="hockeyThem"></span></div><div class="hockey-table-wrap"><canvas id="hockeyCanvas" width="960" height="1520" tabindex="0" aria-label="Hava hokeyi masası. Fareyi hareket ettirerek, dokunarak veya yön tuşlarıyla raketi kontrol et. Fare tuşuna basman gerekmez."></canvas><div id="hockeyOverlay" class="hockey-overlay" role="status"></div></div><div class="hockey-footer"><span id="hockeyStatus"></span><button class="start-button hidden" id="hockeyRematch" data-action="restart-hockey">Tekrar oyna</button></div>';
       const canvas = document.querySelector('#hockeyCanvas');
-      scene = { game, id, send, canvas, ctx: canvas.getContext('2d'), previous: game, received: performance.now(), target: null, pointer: null, seq: 0, keys: new Set(), lastDraw: performance.now(), lastSent: null };
+      scene = { game, id, send, canvas, ctx: canvas.getContext('2d'), previous: game, received: performance.now(), target: null, seq: 0, keys: new Set(), lastDraw: performance.now(), lastSent: null };
       bind(scene);
       scene.animation = requestAnimationFrame(draw);
       canvas.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -34,12 +34,12 @@
     s.previous = old; s.game = game; s.received = performance.now();
     s.side = game.players.indexOf(s.id);
     const bottom = s.side < 0 ? 0 : s.side, top = 1 - bottom;
-    if (game.scores[0] + game.scores[1] !== old.scores[0] + old.scores[1] || game.phase !== old.phase) { s.target = null; s.pointer = null; s.lastSent = null; s.keys.clear(); }
+    if (game.scores[0] + game.scores[1] !== old.scores[0] + old.scores[1] || game.phase !== old.phase) { s.target = null; s.lastSent = null; s.keys.clear(); }
     if (s.side >= 0) s.seq = Math.max(s.seq, game.paddles[s.side].inputSeq);
     document.querySelector('#hockeyMe').textContent = (game.names[game.players[bottom]] || 'Oyuncu') + (s.side >= 0 ? ' · SEN' : '');
     document.querySelector('#hockeyThem').textContent = game.names[game.players[top]] || 'Oyuncu';
     document.querySelector('#hockeyScore').textContent = `${game.scores[bottom]} : ${game.scores[top]}`;
-    document.querySelector('#hockeyStatus').textContent = game.phase === 'finished' ? `${game.names[game.winner] || 'Oyuncu'} kazandı!` : s.side < 0 ? 'İzleyicisin · İlk 10 gol' : 'Basılı tutup sürükle · İlk 10 gol';
+    document.querySelector('#hockeyStatus').textContent = game.phase === 'finished' ? `${game.names[game.winner] || 'Oyuncu'} kazandı!` : s.side < 0 ? 'İzleyicisin · İlk 10 gol' : matchMedia('(pointer: coarse)').matches ? 'Dokun veya sürükle · İlk 10 gol' : 'Fareyi hareket ettir · İlk 10 gol';
     document.querySelector('#hockeyRematch').classList.toggle('hidden', game.phase !== 'finished' || s.side < 0);
     s.canvas.style.touchAction = s.side >= 0 && game.phase === 'playing' ? 'none' : 'pan-y';
   }
@@ -47,7 +47,9 @@
     const target = (x, y) => {
       if (s.side < 0 || s.game.phase !== 'playing') return;
       const margin = s.game.table.paddle + 6;
-      s.target = { x: clamp(x, margin, 480 - margin), y: clamp(y, s.side === 0 ? 380 + margin : margin, s.side === 0 ? 760 - margin : 380 - margin) };
+      const next = { x: clamp(x, margin, 480 - margin), y: clamp(y, s.side === 0 ? 380 + margin : margin, s.side === 0 ? 760 - margin : 380 - margin) };
+      if (s.target && Math.hypot(next.x - s.target.x, next.y - s.target.y) < .75) return;
+      s.target = next;
     };
     const pointerPoint = event => {
       const rect = s.canvas.getBoundingClientRect();
@@ -56,18 +58,25 @@
       return { x, y };
     };
     const pointer = event => {
-      if (s.side < 0 || s.game.phase !== 'playing' || !s.canvas.hasPointerCapture(event.pointerId)) return;
-      event.preventDefault();
-      const point = pointerPoint(event), base = s.target || s.game.paddles[s.side];
-      if (s.pointer) target(base.x + (point.x - s.pointer.x) * s.game.table.controlGain, base.y + (point.y - s.pointer.y) * s.game.table.controlGain);
-      s.pointer = point;
+      if (s.side < 0 || s.game.phase !== 'playing') return;
+      if (event.pointerType !== 'mouse' && !s.canvas.hasPointerCapture(event.pointerId)) return;
+      if (event.pointerType !== 'mouse' && event.cancelable) event.preventDefault();
+      // Screen position maps directly to table position, regardless of mouse DPI or event rate.
+      const point = pointerPoint(event);
+      target(point.x, point.y);
     };
-    s.canvas.onpointerdown = event => { if (s.side < 0 || s.game.phase !== 'playing') return; event.preventDefault(); s.canvas.setPointerCapture(event.pointerId); s.canvas.focus({ preventScroll: true }); s.pointer = pointerPoint(event); const p = s.game.paddles[s.side]; target(p.x, p.y); };
+    s.canvas.onpointerdown = event => {
+      if (s.side < 0 || s.game.phase !== 'playing' || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      event.preventDefault();
+      if (event.pointerType !== 'mouse') s.canvas.setPointerCapture(event.pointerId);
+      s.canvas.focus({ preventScroll: true });
+      const point = pointerPoint(event); target(point.x, point.y);
+    };
     s.canvas.onpointermove = pointer;
-    s.canvas.onpointerup = s.canvas.onpointercancel = event => { if (s.canvas.hasPointerCapture(event.pointerId)) s.canvas.releasePointerCapture(event.pointerId); s.pointer = null; };
+    s.canvas.onpointerup = s.canvas.onpointercancel = event => { if (s.canvas.hasPointerCapture(event.pointerId)) s.canvas.releasePointerCapture(event.pointerId); };
     s.keydown = event => { if (s.side < 0 || s.game.phase !== 'playing' || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return; const key = event.key.toLowerCase(); if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(key)) { event.preventDefault(); s.keys.add(key); } };
     s.keyup = event => s.keys.delete(event.key.toLowerCase());
-    s.blur = () => { s.keys.clear(); s.pointer = null; };
+    s.blur = () => { s.keys.clear(); };
     document.addEventListener('keydown', s.keydown); document.addEventListener('keyup', s.keyup); window.addEventListener('blur', s.blur);
     s.inputTimer = setInterval(() => {
       if (!s.target || s.side < 0 || s.game.phase !== 'playing') return;

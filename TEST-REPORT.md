@@ -126,3 +126,16 @@ LoL XOX ve Futbol XOX menünün ilk iki ayrı kartıdır. Sürümlü JS/CSS bağ
 - JavaScript sözdizimi ve Cloudflare dry-run derlemesi başarılı. Dry-run yerel geçici yapılandırmayla veri yenilemeden yapıldı; üretimde mevcut otomatik futbol/LoL veri güncellemesi korunuyor.
 - Örnek durumlarla masaüstü/mobil filo yerleştirme, atış tahtası, LoL soru, bayrak soru ve menü önizlemeleri incelendi. Önizlemedeki hamle/puan/soru verileri temsilidir; gerçek çok oyunculu maç doğrulaması değildir.
 - Bu sürüm için yeni otomatik test veya gerçek WebSocket oyun testi çalıştırılmadı. Önceki sürümlerin test sayıları bu dört yeni oyunu kapsamıyor. Canlıya yayın yapılmadı.
+
+## Sürüm 2026.10.21.8 — Bayrakta ülke arama ve 30 saniye
+
+- Bayrak oyunu dört seçenek yerine ülke kataloğundan yazıp seçmeye geçti. Cevap ülke koduyla sunucuda doğrulanır; seçim kilidi, ortak soru ve süre/puan kuralları korunur. Futbol/LoL bilgi düelloları çoktan seçmeli kalır.
+- Bayrak soru verisinde seçenek veya doğru ülke kodu oyun sırasında yayınlanmaz. Doğru ülke adı yalnızca ortak sonuçta gönderilir. Eski çoktan seçmeli Bayrak Yarışı kayıtları güvenli biçimde oyun menüsüne döner.
+- Süre 30 saniyedir. Arama Türkçe karakterleri normalleştirir, yaygın ülke takma adlarını destekler; yön tuşları/Enter ve dokunma/tıklama kullanılabilir. Diğer oyunculardan güncelleme gelince arama metni/odak korunur.
+- Masaüstü ve 390 px mobilde örnek tur durumuyla arama ekranı önizlendi. Temsilî bayrak kullanıldı; gerçek çok oyunculu maç testi veya yeni otomatik test çalıştırılmadı. Sözdizimi ve Cloudflare dry-run derlemesi kontrol edildi. Canlıya yayın yapılmadı.
+
+## Sürüm 2026.10.21.9 — Hokey fare kontrolü
+
+- Fare hareketinde basılı tutma zorunluluğu kaldırıldı. Raket hedefi doğrudan masa üzerindeki imleç konumundan alınır; eski göreli kontrol kazancı kullanılmaz. Küçük titreşim filtresi, mobil dokunma/sürükleme ve klavye kontrolü korunur.
+- `src/hockey.js` değiştirilmedi; sunucu çarpışma ve hareket fiziği aynıdır.
+- JavaScript sözdizimi ve Cloudflare dry-run derlemesi kontrol edildi. Yeni otomatik test veya gerçek maç testi çalıştırılmadı. Canlıya yayın yapılmadı.

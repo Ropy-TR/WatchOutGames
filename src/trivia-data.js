@@ -45,7 +45,7 @@ function lolPool() {
 // Only factories are cached; answer positions and distractors are freshly shuffled per match.
 let footballFactories, lolFactories;
 export function triviaDeck(category, count) {
-  if (category === 'flags') return shuffled(FLAG_COUNTRIES).slice(0, count).map(country => question('Bu bayrak hangi ülkeye ait?', country, FLAG_COUNTRIES.filter(other => other.code !== country.code), { flagCode: country.code }));
+  if (category === 'flags') return shuffled(FLAG_COUNTRIES).slice(0, count).map(country => ({ prompt: 'Bu bayrak hangi ülkeye ait?', answer: country.code, answerLabel: country.name, flagCode: country.code }));
   const pool = category === 'football' ? (footballFactories ||= footballPool()) : category === 'lol' ? (lolFactories ||= lolPool()) : [];
   if (pool.length < count) throw new Error('Bu kategoride yeterli soru yok.');
   return shuffled(pool).slice(0, count).map(factory => factory());
