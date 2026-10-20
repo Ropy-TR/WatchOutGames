@@ -1,6 +1,6 @@
 {
-  "schema": 3,
-  "description": "Strict allowed catalog: all covered Turkish clubs, six familiar clubs from each big-five league, and selected leading clubs elsewhere. The historical top-30 preference is intersected with this catalog.",
+  "schema": 4,
+  "description": "Mixed club mode: independent 90% Turkish side slot and 70% Turkish top slot. Superlig mode uses Turkish clubs on both axes exclusively. Non-Turkish slots retain the restricted elite/familiar pool.",
   "ranking": {
     "provider": "Opta Power Rankings",
     "asOf": "2026-10-19",
@@ -496,5 +496,7 @@
       "rank": 30,
       "rating": 90.5789090717
     }
-  ]
+  ],
+  "turkishSidePercent": 90,
+  "turkishTopPercent": 70
 }

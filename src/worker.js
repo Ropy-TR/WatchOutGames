@@ -1,9 +1,11 @@
 export { Room } from './room.js';
+export { LobbyDirectory } from './lobby-directory.js';
 import { SPY_CATEGORIES } from './game-data.js';
 import { footballCatalog, searchFootballPlayers, footballMediaKind } from './football.js';
 import { lookupFootballMedia } from './football-media.js';
 import { lolCatalog, searchLolChampions } from './lol.js';
 import { RELEASE } from './release.js';
+import { WHO_CATEGORIES } from './whoami.js';
 const footballCatalogBody = JSON.stringify(footballCatalog());
 const lolCatalogBody = JSON.stringify(lolCatalog());
 
@@ -22,10 +24,10 @@ export default {
   async fetch(request, env, context) {
     const url = new URL(request.url);
     if (url.pathname === '/api/version' && request.method === 'GET') {
-      const response = json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol'] });
+      const response = json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey'] });
       response.headers.set('cache-control', 'no-store'); return response;
     }
-    if (url.pathname === '/api/games' && request.method === 'GET') return json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol'], spyCategories: Object.keys(SPY_CATEGORIES) });
+    if (url.pathname === '/api/games' && request.method === 'GET') return json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey'], spyCategories: Object.keys(SPY_CATEGORIES), whoamiCategories: Object.keys(WHO_CATEGORIES) });
     if (url.pathname === '/api/lol' && request.method === 'GET') return new Response(lolCatalogBody, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' } });
     if (url.pathname === '/api/lol/search' && request.method === 'GET') {
       const response = json({ players: searchLolChampions(url.searchParams.get('q')) });
@@ -55,13 +57,16 @@ export default {
         'access-control-allow-origin': '*'
       } });
     }
+    if (url.pathname === '/api/rooms' && request.method === 'GET') {
+      return env.LOBBIES.get(env.LOBBIES.idFromName('public')).fetch('https://directory/');
+    }
     if (url.pathname === "/api/rooms" && request.method === "POST") {
       const roomCode = code();
       const id = env.ROOMS.idFromName(roomCode);
       const room = env.ROOMS.get(id);
       const body = await request.json();
       const result = await room.fetch("https://room/init", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, code: roomCode })
       });
       if (!result.ok) return result;
       return json({ code: roomCode });

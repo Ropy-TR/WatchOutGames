@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import { lolCellCandidates } from '../src/lol.js';
 import { cellCandidates } from '../src/football.js';
 import data from '../src/data/lol.json' with { type: 'json' };
-import football from '../src/data/football.json' with { type: 'json' };
+import football from '../src/football-dataset.js';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const base = process.env.GAME_TEST_URL || 'http://127.0.0.1:8787';

@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { cellCandidates } from '../src/football.js';
-import data from '../src/data/football.json' with { type: 'json' };
+import data from '../src/football-dataset.js';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const base = process.env.GAME_TEST_URL || 'http://127.0.0.1:8787';
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
@@ -205,6 +205,13 @@ try {
 
   await menu(); await click(0, '[data-game="xox"]');
   await until(async () => (await game(3))?.kind === 'xox' && (await pages[0].locator('[data-xox-cell]').count()) === 9, 'xox');
+  assert.ok(await pages[0].locator('[data-xox-mode="superlig"]').isVisible());
+  await click(0, '[data-xox-mode="superlig"]');
+  await until(async () => (await game(3))?.mode === 'superlig', 'Super Lig mode broadcasts');
+  const domestic = new Set(data.clubs.filter((club) => club.league === 'turkey').map((club) => club.id));
+  assert.ok([...(await game()).topIds,...(await game()).sideIds].every((club) => domestic.has(club)));
+  for (const select of await pages[0].locator('.xox-team').all()) assert.equal(await select.locator('option').count(),18);
+  console.log('PASS: Super Lig mode visible, all six headers domestic, manual selectors restricted to 18 clubs');
   const ids = await Promise.all(pages.map((_, n) => id(n)));
   let xg = await game(); let actor = ids.indexOf(xg.teams[xg.turn][0]);
   const wrongActor = ids.indexOf(xg.teams[xg.turn === 'X' ? 'O' : 'X'][0]);
@@ -247,6 +254,8 @@ try {
   await click(0, '[data-action="new-xox"]');
   await until(async () => (await game()).boardId !== firstBoard, 'next xox board');
   assert.deepEqual((await game()).teams, originalTeams); assert.equal((await game()).series.scores[starting], 1);
+  assert.equal((await game()).mode,'superlig');
+  assert.ok([...(await game()).topIds,...(await game()).sideIds].every((club) => domestic.has(club)));
   xg = await game(); used.clear(); assert.ok(choose(0));
   for (let column = 0; column < 3; column++) {
     xg = await game(); actor = ids.indexOf(xg.teams[xg.turn][0]);
@@ -265,6 +274,10 @@ try {
   assert.ok(await pages[0].evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no mobile horizontal overflow');
   await fs.mkdir('.cache/browser-results', { recursive: true });
   await pages[0].screenshot({ path: '.cache/browser-results/xox-mobile.png', fullPage: true });
+  await click(0, '[data-action="new-xox"]');
+  await until(async () => !(await game()).series.finished, 'new domestic series');
+  assert.equal((await game()).mode,'superlig');
+  assert.ok([...(await game()).topIds,...(await game()).sideIds].every((club) => domestic.has(club)));
   assert.deepEqual(errors, []);
   console.log('PASS: XOX best-of-three series 2–0, stable teams and scores, three-in-a-row wins, mobile fits, zero browser exceptions');
 } finally { await browser.close(); }

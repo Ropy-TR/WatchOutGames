@@ -4,7 +4,7 @@ Oda kodu ve şifresiyle oynanan mini oyun sitesi. Arayüz Cloudflare Workers sta
 
 ## Kurulum yapmadan GitHub ile yayınlama
 
-Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.20.5` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.20.5` ve oyun listesinde `lol` döndürmeli.
+Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.4` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.4` ve oyun listesinde `hockey` döndürmeli.
 
 ## Yerelde çalıştırma
 
@@ -32,7 +32,7 @@ Worker, Pages static assets ayarını kullanır ve Durable Object için ilk SQLi
 
 Tahtada boş hücre kalsa da kullanılmamış geçerli futbolcu kalmazsa XOX beraberlikle biter.
 
-Futbol XOX kataloğu 65 kulüple sınırlıdır: Süper Lig listesinde bulunan 18 takım; İngiltere, İspanya, Almanya, İtalya ve Fransa’dan altışar bilindik büyük kulüp; Hollanda’dan Ajax/PSV/Feyenoord, Portekiz’den Benfica/Porto/Sporting, Belçika’dan Anderlecht/Club Brugge/Genk, Yunanistan’dan Olympiacos/Panathinaikos/AEK/PAOK, Polonya’dan Legia/Lech; ayrıca Flamengo ve Bodø/Glimt. Altılılar bilinirlik seçimidir; güncel puan tablosundaki ilk altı anlamına gelmez. Eski 202 kulüplük kariyer arşivi sunucuda veri kaynağı olarak korunur; rastgele ve elle seçilen tahtalar yalnızca bu 65 kulübü kabul eder. %80 ilk 30 önceliği bu izinli listeyle kesiştirilir, çıkarılmış takımları geri getiremez. %90 Türk takımı ve bunun içinde %95 dört büyük önceliği korunur. Diğer %5 bütün diğer Süper Lig kulüplerine açıktır. Wikidata kariyer kesişimi olmayan kulüpler elle seçimde kalır; rastgele tahtada aynı gruptan çözülebilen bir alternatif seçilir. Her tahtanın dokuz farklı cevabı bulunmalıdır.
+Futbol XOX kataloğu 65 kulüple sınırlıdır: Süper Lig listesinde bulunan 18 takım; İngiltere, İspanya, Almanya, İtalya ve Fransa’dan altışar bilindik büyük kulüp; Hollanda’dan Ajax/PSV/Feyenoord, Portekiz’den Benfica/Porto/Sporting, Belçika’dan Anderlecht/Club Brugge/Genk, Yunanistan’dan Olympiacos/Panathinaikos/AEK/PAOK, Polonya’dan Legia/Lech; ayrıca Flamengo ve Bodø/Glimt. Altılılar bilinirlik seçimidir; güncel puan tablosundaki ilk altı anlamına gelmez. Eski 202 kulüplük kariyer arşivi sunucuda veri kaynağı olarak korunur; rastgele ve elle seçilen tahtalar yalnızca bu 65 kulübü kabul eder. %80 ilk 30 önceliği bu izinli listeyle kesiştirilir, çıkarılmış takımları geri getiremez. Takım × Takım’da sol eksene %90, üst eksene bağımsız %70 Türk takımı eklenir; her eksende dört büyük önceliği %95’tir. Diğer %5 bütün diğer Süper Lig kulüplerine açıktır. Wikidata kariyer kesişimi olmayan kulüpler elle seçimde kalır; rastgele tahtada aynı gruptan çözülebilen bir alternatif seçilir. Her tahtanın dokuz farklı cevabı bulunmalıdır.
 
 ### Maçlar ve toplam skor
 
@@ -64,17 +64,17 @@ Bağlantı yenilendiğinde oda kodu/şifresiyle tekrar katılmak aynı tarayıc�
 
 Veri dosyası `src/data/football.json` içinde projeyle birlikte gelir. API anahtarı veya kullanıcı hesabı gerekmez. Oyun sırasında Wikidata'ya istek gönderilmez. `/api/football` küçük lig/takım kataloğunu, `/api/football/search?q=...` ise sunucuda aranan en fazla 35 futbolcuyu sunar; tarayıcı bütün futbolcu havuzunu indirmez.
 
-Kulüp kapsamı 2026–27 sezonundaki 200 takımdır: Premier League, Serie A, La Liga, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Belçika Pro League, Yunanistan Super League, Polonya Ekstraklasa ve Süper Lig. Türkiye dışındaki ilk 10 Avrupa ülkesi + Türkiye seçimi 15 Ekim 2026 UEFA ülke sıralaması görünümüne dayanır. Seçim ve sezon kaynakları `scripts/football-leagues.json` içinde tutulur. Takım listeleri sezon sayfalarının kulüp/stadyum tablolarından çıkarılır, Wikipedia yönlendirmeleri çözülerek Wikidata kimliklerine bağlanır. Oyuncu geçmişleri Wikidata'dan alınır.
+Tarihî arşiv kapsamı 2026–27 sezonu listelerinden 202 kulüptür; oynanabilir katalog yukarıdaki 65 kulüple sınırlıdır. Arşiv ligleri: Premier League, Serie A, La Liga, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Belçika Pro League, Yunanistan Super League, Polonya Ekstraklasa ve Süper Lig. Türkiye dışındaki ilk 10 Avrupa ülkesi + Türkiye seçimi 15 Ekim 2026 UEFA ülke sıralaması görünümüne dayanır. Seçim ve sezon kaynakları `scripts/football-leagues.json` içinde tutulur. Takım listeleri sezon sayfalarının kulüp/stadyum tablolarından çıkarılır, Wikipedia yönlendirmeleri çözülerek Wikidata kimliklerine bağlanır. Tarihî arşiv Wikidata’dan, güncel A takım kadroları ve bu oyuncuların kariyerleri Wikipedia MediaWiki API üzerinden alınır.
 
 Sezonun kulüp listesini yeniden almak için `npm run clubs:update`, ardından oyuncu havuzunu almak için `npm run data:update` çalıştırılır. Lig/sezon seçimi `scripts/football-leagues.json` dosyasında değiştirilir. Katalog değiştiğinde, veri 24 saatten yeni olsa da bir sonraki build oyuncu verisini yeniden alır. İsim ve alternatif yazılışlar 30 gün önbellekte tutulur; kulüp geçmişleri her veri yenilemesinde yeniden sorgulanır.
 
-Cloudflare'a her yayınlamada Wrangler'ın build adımı `scripts/update-data.mjs` üzerinden futbol ve LoL veri güncelleyicilerini çalıştırır. Veri 24 saatten yeniyse mevcut dosya kullanılır. Daha eskiyse yenilenir; kaynaklara erişilemiyorsa son sağlam dosyayla yayınlama devam eder ve build loguna eski verinin tarihi yazılır. Yenileme kendiliğinden günlük çalışmaz; bir sonraki deployment sırasında yapılır.
+Cloudflare'a her yayınlamada Wrangler'ın build adımı `scripts/update-data.mjs` üzerinden futbol ve LoL veri güncelleyicilerini çalıştırır. Wikidata arşivi ve LoL verisi 24 saatten, sezon kadro eki 24 saatten yeniyse mevcut dosya kullanılır. Daha eskiyse yenilenir; kaynaklara erişilemiyorsa son sağlam dosyayla yayınlama devam eder ve build loguna eski verinin tarihi yazılır. Yenileme kendiliğinden günlük çalışmaz; bir sonraki deployment sırasında yapılır.
 
 Elle yenilemek için `npm run data:update` kullanılabilir. Bilgisayara araç kurmadan yayınlamak için GitHub deposunu Cloudflare Workers'a bağlayıp deploy komutunu `npx wrangler deploy` bırakmak yeterlidir. Depoda `scripts`, `src/data`, `src/football.js` ve güncel `wrangler.toml` bulunmalıdır.
 
 Kaynak: [Wikidata](https://www.wikidata.org/), [CC0](https://www.wikidata.org/wiki/Wikidata:Licensing). Kulüpler `scripts/football-clubs.json` içinde Wikidata kimlikleriyle tanımlıdır. Futbol mesleği (`P106`) veya futbol branşı (`P641`) bulunan kişiler alınır. Import işlemi yalnızca bu A takım kimliklerine ait, kullanımdan kaldırılmamış `P54` üyeliklerinde pozitif `P1350` maç sayısı olan kayıtları alır. Genç ve rezerv takım kimlikleri dahil edilmez. Spor ülkesi `P1532` alanından alınır; vatandaşlık (`P27`) spor ülkesi yerine kullanılmaz.
 
-Bu filtreler kapsamı daraltır: maç sayısı Wikidata'da eksik olan geçerli futbolcular kabul edilmeyebilir. Bazı kayıtlar eski veya hatalı olabilir. Hiç maç sayılı kaydı bulunmayan kulüpler `clubsWithoutMatchData` alanında listelenir ve çözülebilen rastgele tahtalarda yer alamaz. `fetchedAt` içe aktarılan en eski önbellek yanıtının zamanını belirtir; tüm futbolcuların transferlerinin o tarihte eksiksiz doğrulandığı anlamına gelmez. Her futbolcunun Wikidata kimliği ve maç sayılı üyelik kayıtları veri dosyasında korunur.
+Bu bölüm yalnızca tarihî Wikidata arşivini açıklar. Güncel oyunculardaki eksik kulüpler ayrıca sezon ekinden tamamlanır; güncel A takım kadro kaydı maç sayısı bulunmasa da yeterlidir. İki kaynak da eksik veya gecikmeli olabilir. Bazı kayıtlar eski veya hatalı olabilir. Hiç maç sayılı kaydı bulunmayan kulüpler `clubsWithoutMatchData` alanında listelenir ve çözülebilen rastgele tahtalarda yer alamaz. `fetchedAt` içe aktarılan en eski önbellek yanıtının zamanını belirtir; tüm futbolcuların transferlerinin o tarihte eksiksiz doğrulandığı anlamına gelmez. Her futbolcunun Wikidata kimliği ve maç sayılı üyelik kayıtları veri dosyasında korunur.
 
 ## LoL verileri ve şampiyon görselleri
 
@@ -102,3 +102,50 @@ Yalnızca kamu malı, CC0, CC BY ve CC BY-SA olarak işaretli Commons dosyaları
 Cloudflare Cache API sadece görsel URL'si/yazar/lisans gibi JSON metadatasını 7 gün önbellekler; bulunamayan kayıtlar 1 gün saklanır. Geçici servis hataları kalıcı bir eksik görsel olarak önbelleğe yazılmaz. Görsel bulunmaması veya yüklenememesi oyunu engellemez. Yeni anahtar, ücretli servis ya da ek Cloudflare binding'i gerekmez.
 
 Oda parolası Durable Object'ın sakladığı oda kaydında yer alır. Gerçek kişisel veriler veya hesaplar gerekmiyor.
+
+## Güncel sezon verisi — 2026.10.21.3
+
+`src/data/football-season.json`, seçili 65 kulübün güncel A takım kadrolarını ve oyuncuların kariyerlerini içerir. `src/data/football.json` tarihî arşivdir; uygulama ikisini birleştirir. Yeni sezon için tarihî kulüpler silinmez. Güncel A takım kaydı yeni transferin kabul edilmesi için yeterlidir; maç sayısı 0 veya bilinmiyorsa aynen korunur. Kadroda olmayan tarihî bir kulüp için pozitif A takım maç sayısı gerekir. Aynı isimli genç/yedek takımlar farklı Wikidata kimlikleri olduğu için A takıma dönüştürülmez. Senior millî takım maçları varsa onlar, yoksa kadronun FIFA ülke bayrağı kullanılır; vatandaşlık alanı kullanılmaz.
+
+`npm run season:update` sezon ekini yeniler; `node scripts/update-football-season.mjs --force` API önbelleğini atlayarak tekrar okur. Normal dağıtımda kontrol edilmiş sezon eki 24 saatten eskiyse yenileme denenir. Bu zamanlanmış görev değildir: dağıtım çalıştığında kontrol edilir. Kaynak erişilemezse mevcut doğrulanmış dosya korunur ve build loguna tarihiyle uyarı yazılır. API `/api/football` içindeki `seasonCheckedAt` kadro kontrolünün zamanıdır; her kaynağın bütün transferleri hatasız yayımladığını garanti etmez.
+
+Her kadro ve futbolcu kaydında kaynak sayfası ve Wikipedia revizyon kimliği saklanır; isimsiz maç sayıları veya elle uydurulmuş transferler eklenmez. Wikipedia ek verisi CC BY-SA 4.0, Wikidata arşivi CC0 lisansındadır; oyun ekranındaki kapalı Veri kaynakları alanında atıf bulunur.
+
+## Futbol XOX modları — 2026.10.21.3
+
+Takım × Takım: soldaki üç başlığa tam bir Süper Lig takımı eklenme ihtimali %90, üstteki üç başlığa tam bir Süper Lig takımı eklenme ihtimali bağımsız olarak %70. İki olay birlikte yaklaşık %63 olasılığa sahiptir; her oyun için kota değildir. Her eksenin Türk takımı %95 olasılıkla dört büyük grubundan, %5 olasılıkla diğer Süper Lig kulüplerinden seçilir. Aynı kulüp iki eksende tekrarlanmaz. Sol/üst olasılıkları, dört büyük grubu ve yabancı kulüp havuzu tahta aramasından önce bir kez belirlenir; çözülebilirlik araması bu tercihleri değiştirmez. Yabancı slotlar önceki dar havuz kurallarını korur.
+
+Sadece Süper Lig: iki eksendeki toplam altı farklı kulüp yalnızca Süper Lig listesinden gelir. Elle seçim listesi de 18 yerli kulübe sınırlandırılır. Takım × Ülke modunda üstteki kulüpler için %90 Türk takımı olasılığı korunur; solda ülkeler bulunur. Bütün modlarda dokuz farklı cevap, 30 saniye, sıra ve best of 3 kuralları geçerlidir. Sonraki tahtada ve yeni seride seçili mod korunur.
+
+## Kimim Ben? — 2026.10.21.3
+
+Oyun seç menüsünde ayrı karttır. Kategoriler: Ünlüler (103 bilindik isim), Meslekler (72), Karışık (175). 2–8 katılımcı için tekrarsız kartlar sunucudaki kriptografik kurayla atanır. Her yeni tur bağımsızdır; eski tur kartları kura dışında bırakılmaz.
+
+Herkes diğer katılımcıların kartlarını görür. Kendi cevabı sonuçlar açılana veya kendisi doğru tahmin edene kadar istemciye gönderilmez; ortak oda durumunda hiçbir kart cevabı bulunmaz. Sorular sesli sorulur. Sırası gelen oyuncu tahmin yazar veya pas geçer. Yanlış tahmin sırayı geçirir, doğru tahmin oyuncuyu bulanlar listesine ekler. Türkçe aksan, büyük/küçük harf, noktalama ve tanımlanmış kısa adlar desteklenir. Çevrimdışı oyuncunun sırası diğer katılımcılarca geçilebilir.
+
+Herkes bulunca tur otomatik biter. Katılımcılar Turu bitir düğmesiyle cevapları daha erken de açabilir. Sonuçta kategori seçip sonraki tur başlatılır; yeni katılanlar o turda oyuna dahil edilir. Devam eden tura sonradan gelenler izleyicidir ve tahmin/pas/tur bitirme yapamaz. Geri bağlanan kişi gizli oturum belirteciyle aynı kartını korur.
+
+## Tabu — 2026.10.21.3
+
+Menüde ayrı yedinci oyun. 4–8 kişi, kırmızı/mavi takımlar ve takım başına en az iki oyuncu. Beş kişi otomatik 3–2 bölünür; maçtan önce takım değiştirilebilir. 300 özgün Türkçe kartın her birinde beş yasaklı kelime vardır. Konuşma arkadaşların sesli iletişimiyle yürür; konuşma tanıma veya mikrofon izni kullanılmaz.
+
+Her anlatım 60 saniyedir. Doğru +1, tabu −1; üç pas ücretsizdir, dördüncü pas sunucuda engellenir. Kartı yalnızca anlatıcı ve karşı takımdaki hakem alır. Hakem tabu bildirebilir; doğru ve pas işlemleri anlatıcıdadır. Süre anlatıcının başlatmasıyla sunucuda başlar. Tahminciler, izleyiciler ve hazır bekleyen anlatıcı kartı alamaz.
+
+İki takım sırayla oynar, anlatıcı takım içinde döner. Her takım üç anlatım tamamlayınca toplam puan kazananı belirler; eşitlik beraberliktir. Tur sonucunda kullanılmış kelimeler açılır. Deste bitene kadar kart tekrar etmez; 300 kart tüketilirse deste yeniden güvenli kurayla karıştırılır. Çevrimdışı anlatıcı/hakemi yalnızca uygun takımdaki oyuncu devralabilir. Yeniden bağlantı süreyi sıfırlamaz.
+
+## Tema, sıra sesi ve açık lobiler — 2026.10.21.3
+
+- Üst çubuktaki renk seçici ana vurgu rengini değiştirir; tercih yalnızca o tarayıcıda saklanır. Siyah, beyaz ve koyu renklerde düğme yazısı otomatik siyah/beyaz seçilir; koyu zemin üzerindeki vurgu yazıları okunabilir tona açılır.
+- Futbol ve LoL XOX'te sıra takımınıza geldiğinde kısa ses çalar. Üstteki ses düğmesiyle kapatılabilir. Tarayıcı ses izni için sayfada önce dokunmak/tıklamak gerekir; cihazın sessiz modu ve tarayıcı ses engelleri geçerlidir.
+- Açık lobiler sekmesi 10 saniyede bir yenilenir. Odaya tıklamak katılım formunu koduyla açar; nickname ve oda şifresi gerekir. Oda oluştururken listede görünmesi kapatılabilir. Daha önce oluşturulmuş odalar otomatik olarak herkese açılmaz.
+- Liste yalnızca kod, oyun, çevrimiçi oyuncu sayısı ve doluluk durumunu taşır. Oda boşalınca kaydı kaldırılır; kopmuş bağlantıların kaydı en geç 90 saniyede düşer. Oyuncu isimleri, şifreler ve gizli oyun bilgileri listelenmez.
+- Bu sürümde `wrangler.toml` yeni `LOBBIES` binding'ini ve `v2` SQLite migration'ını içerir; dosyayı mutlaka paketin geri kalanıyla yükle. Mevcut `v1` Room migration'ı korunmuştur.
+
+## Hava Hokeyi — 2026.10.21.4
+
+- Oyun seç menüsünde ayrı Hava Hokeyi kartı bulunur. İki oyuncu oynar; diğer lobi üyeleri izler. Hazırlık ekranında oyuncular kendi yerlerini bırakıp boş tarafa geçebilir.
+- Herkes kendi kalesini ekranın altında görür. Raketi fareyle, masada parmağını sürükleyerek veya yön/WASD tuşlarıyla kontrol eder. Raket kendi yarı sahasında kalır; disk raketlerden, kenarlardan ve kale direklerinden seker.
+- İlk 10 gol atan kazanır. Her golden sonra kısa servis geri sayımı vardır. Maç bitince oyunculardan biri yeni maç açabilir.
+- Disk fiziği, raket hız sınırı ve skor sunucuda hesaplanır. İstemci yalnızca kendi raketinin hedefini gönderir; gol veya disk konumu gönderemez.
+- Oyunculardan biri koparsa maç duraklar, aynı oturumla döndüğünde skor korunarak devam eder. Odadan bilerek çıkmak oturum anahtarını siler; yeni maç için oyun seçimine dönülür.
+- Gerçek zamanlı hareket WebSocket ile aktarılır. Yüksek bağlantı gecikmesi oynanışı etkileyebilir. Yeni binding veya migration gerekmez; mevcut Room kullanılır.

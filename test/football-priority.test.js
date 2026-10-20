@@ -23,52 +23,72 @@ test('Strict catalog keeps all Turkish clubs, six big-league clubs and selected 
   assert.equal(preferred.size, 65); assert.equal(elite.size, 30);
   for (const id of elite) assert.ok(data.clubs.some((club) => club.id === id));
 });
-test('Probability boundaries: 80 percent elite, 90 percent Turkish, 95 percent big four', () => {
-  for (let ticket = 0; ticket < 100; ticket++) {
-    let calls = 0;
-    const plan = drawFootballPlan('clubs', () => calls++ === 0 ? ticket : 0);
-    assert.equal(plan.profile === 'elite', ticket < 80);
-    calls = 0;
-    const tr = drawFootballPlan('clubs', () => calls++ === 1 ? ticket : 0);
-    assert.equal(Boolean(tr.turkishId), ticket < 90);
-    calls = 0;
-    const big = drawFootballPlan('clubs', () => calls++ === 2 ? ticket : 0);
-    assert.equal(four.has(big.turkishId), ticket < 95);
+test('Independent probability boundaries: side 90, top 70, countries 90, elite 80', () => {
+  for (let ticket=0;ticket<100;ticket++) {
+    const plan=(mode,tickets)=>drawFootballPlan(mode,()=>tickets.shift()??0);
+    assert.equal(Boolean(plan('clubs',[0,ticket,0]).sideTurkish),ticket<90);
+    assert.equal(Boolean(plan('clubs',[0,0,ticket]).topTurkish),ticket<70);
+    assert.equal(Boolean(plan('countries',[0,ticket]).topTurkish),ticket<90);
+    assert.equal(plan('clubs',[ticket,0,0]).profile==='elite',ticket<80);
+    assert.equal(plan('clubs',[0,0,0,ticket]).sideTurkish.group==='big-four',ticket<95);
+    assert.equal(plan('clubs',[0,0,0,0,0,ticket]).topTurkish.group==='big-four',ticket<95);
   }
 });
 test('Weighted draw never repeats or escapes supplied pool', () => {
-  const pool = [...elite].slice(0, 12);
-  assert.deepEqual(sampleFootballClubs([...pool, ...pool], 15, () => 0), pool);
+  const pool=[...elite].slice(0,12);
+  assert.deepEqual(sampleFootballClubs([...pool,...pool],15,()=>0),pool);
 });
-test('Two thousand solvable boards honor strict pools and probabilities', (t) => {
-  for (const mode of ['clubs', 'countries']) {
-    const random = rng(); let eliteBoards = 0, trBoards = 0, bigBoards = 0;
-    for (let i = 0; i < 1000; i++) {
-      const board = createFootballBoard({ mode }, random);
-      assert.equal(boardHasSolution(board), true);
-      const ids = mode === 'clubs' ? [...board.topIds, ...board.sideIds] : board.topIds;
-      assert.equal(new Set(ids).size, ids.length);
-      const tr = ids.filter((id) => turkish.has(id)); assert.ok(tr.length <= 1);
-      const pool = board.selectionProfile === 'elite' ? elite : preferred;
-      for (const id of ids) assert.ok(turkish.has(id) || pool.has(id));
-      for (const id of ids) assert.ok(preferred.has(id));
-      eliteBoards += board.selectionProfile === 'elite'; trBoards += tr.length; bigBoards += four.has(tr[0]);
+test('Two thousand mixed grids keep strict pools and independent Turkish axes', (t) => {
+  for (const mode of ['clubs','countries']) {
+    const random=rng();let eliteCount=0,left=0,top=0,both=0,leftBig=0,topBig=0;
+    for (let i=0;i<1000;i++) {
+      const board=createFootballBoard({mode},random);
+      assert.ok(boardHasSolution(board));
+      const topTr=board.topIds.filter(id=>turkish.has(id));
+      const sideTr=board.sideIds.filter(id=>turkish.has(id));
+      const ids=mode==='clubs'?[...board.topIds,...board.sideIds]:board.topIds;
+      assert.equal(new Set(ids).size,ids.length);
+      assert.ok(topTr.length<=1);assert.ok(sideTr.length<=1);
+      if(mode==='countries') assert.equal(sideTr.length,0);
+      const pool=board.selectionProfile==='elite'?elite:preferred;
+      for(const id of ids) {assert.ok(preferred.has(id));assert.ok(turkish.has(id)||pool.has(id));}
+      eliteCount+=board.selectionProfile==='elite';left+=sideTr.length;top+=topTr.length;
+      both+=Boolean(topTr.length&&sideTr.length);leftBig+=four.has(sideTr[0]);topBig+=four.has(topTr[0]);
     }
-    assert.ok(eliteBoards > 740 && eliteBoards < 860);
-    assert.ok(trBoards > 850 && trBoards < 950);
-    assert.ok(bigBoards / trBoards > 0.91 && bigBoards / trBoards < 0.99);
-    t.diagnostic(`${mode}: elite ${eliteBoards}/1000, Turkish ${trBoards}/1000, big four ${bigBoards}/${trBoards}`);
+    assert.ok(eliteCount>740&&eliteCount<860);
+    if(mode==='clubs') {
+      assert.ok(left>850&&left<950);assert.ok(top>640&&top<760);assert.ok(both>560&&both<700);
+      assert.ok(leftBig/left>0.90&&leftBig/left<0.99);
+    } else assert.ok(top>850&&top<950);
+    assert.ok(topBig/top>0.90&&topBig/top<0.99);
+    t.diagnostic(mode+': elite '+eliteCount+', side '+left+', top '+top+', both '+both+' /1000');
   }
 });
-test('Turkish draws retain their class and slot or use a solvable domestic alternative', () => {
-  for (const mode of ['clubs', 'countries']) for (const id of turkish) {
-    const big = four.has(id), candidates = big ? [...four] : [...turkish].filter((item) => !four.has(item));
-    for (let slot = 0; slot < (mode === 'clubs' ? 6 : 3); slot++) {
-      const tickets = [0, 0, big ? 0 : 99, candidates.indexOf(id), slot], random = rng(5541 + slot);
-      const board = createFootballBoard({ mode }, (max) => tickets.length ? tickets.shift() : random(max));
-      const ids = mode === 'clubs' ? [...board.topIds, ...board.sideIds] : board.topIds;
-      assert.ok(turkish.has(ids[slot])); assert.equal(four.has(ids[slot]), big);
-      assert.equal(board.selectionProfile, 'elite'); assert.ok(boardHasSolution(board));
+test('Every combination of independent flags and Turkish groups produces a solvable grid', () => {
+  for(const side of [false,true])for(const top of [false,true])for(const sideBig of [false,true])for(const topBig of [false,true]) {
+    const tickets=[0,side?0:99,top?0:99];
+    if(side)tickets.push(sideBig?0:99,1);
+    if(top)tickets.push(topBig?0:99,2);
+    const random=rng(1234);
+    const board=createFootballBoard({mode:'clubs'},max=>tickets.length?tickets.shift():random(max));
+    const trLeft=board.sideIds.filter(id=>turkish.has(id)),trTop=board.topIds.filter(id=>turkish.has(id));
+    assert.equal(trLeft.length,Number(side));assert.equal(trTop.length,Number(top));
+    if(side){assert.equal(four.has(trLeft[0]),sideBig);assert.equal(board.sideIds[1],trLeft[0]);}
+    if(top){assert.equal(four.has(trTop[0]),topBig);assert.equal(board.topIds[2],trTop[0]);}
+    assert.ok(boardHasSolution(board));
+  }
+});
+test('Five hundred Super Lig grids contain six distinct domestic clubs and nine answers', () => {
+  const random=rng();
+  for(let i=0;i<500;i++) {
+    const board=createFootballBoard({mode:'superlig'},random);
+    assert.equal(board.mode,'superlig');assert.equal(board.selectionProfile,'superlig');
+    const ids=[...board.topIds,...board.sideIds];assert.equal(new Set(ids).size,6);
+    for(const id of ids)assert.ok(turkish.has(id));assert.ok(boardHasSolution(board));
+    if(i===0){
+      assert.equal(createFootballBoard({mode:'superlig',topIds:board.topIds,sideIds:board.sideIds},random).mode,'superlig');
+      assert.throws(()=>createFootballBoard({mode:'superlig',topIds:['Q8682',...board.topIds.slice(1)],sideIds:board.sideIds},random));
+      assert.throws(()=>createFootballBoard({mode:'superlig',topIds:board.topIds,sideIds:[board.topIds[0],...board.sideIds.slice(1)]},random));
     }
   }
 });

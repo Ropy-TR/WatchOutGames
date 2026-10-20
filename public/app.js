@@ -2,6 +2,9 @@ const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 let categories = ['Mekânlar'];
 let gamesCatalogPromise;
+let whoCards = [], whoDraft = '', whoDraftGame = '', whoCategory = 'Ünlüler';
+let tabuCard = null, tabuInterval;
+const whoCategories = ['Ünlüler', 'Meslekler', 'Karışık'];
 function loadGamesCatalog() { return gamesCatalogPromise ||= fetch('/api/games').then((r) => { if (!r.ok) throw new Error('Kategoriler yüklenemedi.'); return r.json(); }).then((data) => { categories = data.spyCategories; }).catch((error) => { gamesCatalogPromise = null; throw error; }); }
 const cityCategories = ["İsim", "Şehir", "Ülke", "Hayvan", "Bitki", "Yemek", "Eşya", "Ünlü"];
 let footballCatalog = null, catalogPromise = null;
@@ -37,13 +40,29 @@ let selectedCategory = categories[0], showMaster = false, cityStartedAt = 0, cit
 
 function toast(text) { const el = $("#toast"); el.textContent = text; el.classList.add("show"); clearTimeout(toastTimeout); toastTimeout = setTimeout(() => el.classList.remove("show"), 2600); }
 function notice(text) { const n = $("#roomNotice"); n.textContent = text; n.classList.toggle("hidden", !text); }
-function setTab(tab) { $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab)); $("#joinForm").classList.toggle("hidden", tab !== "join"); $("#createForm").classList.toggle("hidden", tab !== "create"); }
+let lobbyRefresh = null, lobbyRequest = 0;
+function setTab(tab) { $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab)); $("#joinForm").classList.toggle("hidden", tab !== "join"); $("#createForm").classList.toggle("hidden", tab !== "create"); $('#lobbyBrowser').classList.toggle('hidden', tab !== 'browse'); clearInterval(lobbyRefresh); if (tab === 'browse') { loadLobbies(); lobbyRefresh = setInterval(() => { if (!document.hidden && !$('#landing').classList.contains('hidden')) loadLobbies(); }, 10000); } }
+const lobbyGames = { xox: 'Futbol XOX', 'lol-xox': 'LoL XOX', spyfall: 'Spyfall', codenames: 'Codenames', city: 'İsim Şehir', whoami: 'Kimim Ben?', tabu: 'Tabu', hockey: 'Hava Hokeyi' };
+async function loadLobbies() {
+  const requestId = ++lobbyRequest;
+  const list = $('#lobbyList'); if (!list.children.length) list.textContent = 'Yükleniyor…';
+  try {
+    const response = await fetch('/api/rooms', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Lobiler yüklenemedi. Yenilemeyi dene.');
+    const data = await response.json(); if (requestId !== lobbyRequest) return;
+    const rooms = data.rooms.filter(room => /^[A-Z0-9]{5}$/.test(room.code));
+    list.innerHTML = rooms.length ? rooms.map(room => `<button type="button" class="lobby-entry" data-lobby="${room.code}" ${room.full ? 'disabled' : ''}><strong>${room.code}</strong><span>${escapeHTML(lobbyGames[room.game] || 'Oyun seçiliyor')} · ${Number(room.playerCount)} / 8</span><small>${room.full ? 'Dolu' : 'Şifreyle katıl →'}</small></button>`).join('') : '<p class="empty-results">Şu an açık lobi yok.</p>';
+  } catch (error) { if (requestId === lobbyRequest) list.textContent = error.message; }
+}
+$('#refreshLobbies').onclick = loadLobbies;
+$('#lobbyList').onclick = event => { const entry = event.target.closest('[data-lobby]'); if (!entry || entry.disabled) return; $('#joinCode').value = entry.dataset.lobby; $('#joinPassword').value = ''; setTab('join'); ($('#joinNickname').value.trim() ? $('#joinPassword') : $('#joinNickname')).focus(); };
+setInterval(() => { if (socket?.readyState === WebSocket.OPEN && !$('#room').classList.contains('hidden')) socket.send(JSON.stringify({ type: 'heartbeat' })); }, 30000);
 $(".tab-row").addEventListener("click", (e) => { const tab = e.target.closest(".tab"); if (tab) setTab(tab.dataset.tab); });
 
 $("#createForm").addEventListener("submit", async (e) => {
   e.preventDefault(); const password = $("#createPassword").value.trim(), nickname = $("#createNickname").value.trim();
   if (password.length < 1) return toast("Bir oda şifresi belirle.");
-  try { const res = await fetch("/api/rooms", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password }) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || "Oda oluşturulamadı."); connect(data.code, password, nickname); }
+  try { const res = await fetch("/api/rooms", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password, listed: $('#listLobby').checked }) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || "Oda oluşturulamadı."); connect(data.code, password, nickname); }
   catch (err) { toast(err.message || "Sunucuya ulaşılamadı."); }
 });
 $("#joinForm").addEventListener("submit", (e) => { e.preventDefault(); connect($("#joinCode").value.trim().toUpperCase(), $("#joinPassword").value, $("#joinNickname").value.trim()); });
@@ -60,6 +79,10 @@ function connect(code, password, nickname) {
   connection.onmessage = (event) => {
     if (socket !== connection) return;
     let msg; try { msg = JSON.parse(event.data); } catch { return; }
+    if (msg.type === 'hockey-frame') {
+      if (currentGame?.kind === 'hockey' && msg.game?.gameId === currentGame.gameId && msg.game.tick >= currentGame.tick) { currentGame = msg.game; window.watchoutHockey.update(currentGame); }
+      return;
+    }
     if (msg.type === 'error') { toast(msg.message); if (!currentGame) renderGame(null); return; }
     if (msg.type === 'joined') {
       playerId = msg.playerId;
@@ -68,15 +91,21 @@ function connect(code, password, nickname) {
     }
     if (msg.type === 'room') {
       updatePlayers(msg.room);
+      if (currentGame?.kind === 'whoami') renderWhoami(currentGame);
+      if (currentGame?.kind === 'hockey' && currentGame.phase === 'lobby' && msg.room.game?.kind === 'hockey') { currentGame = msg.room.game; renderHockey(currentGame); }
+      if (currentGame?.kind === 'tabu' && msg.room.game?.kind === 'tabu') { if (currentGame.phase === 'lobby') currentGame = msg.room.game; renderTabu(currentGame); }
       if (currentGame?.kind === 'codenames' && currentGame.phase === 'lobby' && msg.room.game?.phase === 'lobby') { currentGame = msg.room.game; renderCodenames(currentGame, null); }
     }
     if (msg.type === 'game') {
       myRole = msg.role || null;
+      whoCards = Array.isArray(msg.identityCards) ? msg.identityCards : [];
+      tabuCard = msg.tabuCard || null;
       const changedCode = currentGame?.gameId !== msg.game?.gameId;
       const hadMaster = Boolean(masterKeys);
       masterKeys = Array.isArray(msg.master) ? msg.master : null;
       if (changedCode || (!hadMaster && masterKeys)) showMaster = Boolean(masterKeys);
       cityMine = msg.mine || {};
+      window.watchoutPreferences?.notifyTurn(msg.game, playerId);
       renderGame(msg.game);
     }
   };
@@ -89,19 +118,82 @@ function connect(code, password, nickname) {
 }
 
 function showRoom(code, room) { $("#landing").classList.add("hidden"); $("#room").classList.remove("hidden"); $("#roomCodeLabel").textContent = code; updatePlayers(room); notice(""); window.scrollTo(0, 0); }
-function updatePlayers(room) { const players = room?.players || []; roomPlayers = players; $("#playerCount").textContent = `${players.length} / 8`; $("#playerList").innerHTML = players.map((p, i) => `<div class="player"><span class="player-avatar">${escapeHTML(p.nickname.slice(0,1).toUpperCase())}</span><span>${escapeHTML(p.nickname)}${p.online === false ? " · çevrimdışı" : ""}</span>${p.id === playerId ? '<span class="you-tag">SEN</span>' : ""}</div>`).join(""); }
+function updatePlayers(room) { const players = room?.players || []; roomPlayers = players; window.hockeyOnlinePlayers = players.filter(p => p.online !== false).map(p => p.id); $("#playerCount").textContent = `${players.length} / 8`; $("#playerList").innerHTML = players.map((p, i) => `<div class="player"><span class="player-avatar">${escapeHTML(p.nickname.slice(0,1).toUpperCase())}</span><span>${escapeHTML(p.nickname)}${p.online === false ? " · çevrimdışı" : ""}</span>${p.id === playerId ? '<span class="you-tag">SEN</span>' : ""}</div>`).join(""); }
 function escapeHTML(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
 function send(obj) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(obj)); else toast("Oda bağlantısı yok."); }
 function copy(value, message) { if (!navigator.clipboard) return toast(value); navigator.clipboard.writeText(value).then(() => toast(message)).catch(() => toast(value)); }
 $("#copyCode").onclick = () => copy(current.code, "Oda kodu kopyalandı.");
 $("#shareRoom").onclick = () => copy(`${location.origin}/?oda=${current.code}`, "Davet bağlantısı kopyalandı. Şifreyi ayrıca paylaş.");
-$("#leaveRoom").onclick = () => { send({ type: "leave" }); if (current) localStorage.removeItem("wg-session-" + current.code); clearInterval(xoxInterval); clearTimeout(citySaveTimer); current = null; currentGame = null; myRole = null; masterKeys = null; $("#playerDialog").close(); socket?.close(); socket = null; clearInterval(timerInterval); clearInterval(cityInterval); $("#room").classList.add("hidden"); $("#landing").classList.remove("hidden"); $("#activeGame").classList.add("hidden"); $("#gamePicker").classList.remove("hidden"); window.scrollTo(0, 0); };
+$("#leaveRoom").onclick = () => { window.watchoutHockey.destroy(); send({ type: "leave" }); if (current) localStorage.removeItem("wg-session-" + current.code); clearInterval(xoxInterval); clearInterval(tabuInterval); clearTimeout(citySaveTimer); current = null; currentGame = null; myRole = null; masterKeys = null; $("#playerDialog").close(); socket?.close(); socket = null; clearInterval(timerInterval); clearInterval(cityInterval); $("#room").classList.add("hidden"); $("#landing").classList.remove("hidden"); $("#activeGame").classList.add("hidden"); $("#gamePicker").classList.remove("hidden"); window.scrollTo(0, 0); };
 
 $$(".picker-card").forEach((card) => card.addEventListener("click", () => startGameMenu(card.dataset.game)));
 function startGameMenu(kind) {
   notice(""); $("#gamePicker").classList.add("hidden"); const view = $("#activeGame"); view.classList.remove("hidden");
-  if (kind === "spy") renderSpySetup(); else if (kind === "code") send({ type: "start-codenames" }); else if (kind === "city") startCity(); else if (kind === "xox") startXox(); else if (kind === "lol") startLol();
+  if (kind === "spy") renderSpySetup(); else if (kind === "code") send({ type: "start-codenames" }); else if (kind === "city") startCity(); else if (kind === "xox") startXox(); else if (kind === "lol") startLol(); else if (kind === 'whoami') renderWhoSetup(); else if (kind === 'tabu') send({ type: 'start-tabu' }); else if (kind === 'hockey') send({ type: 'start-hockey' });
 }
+function renderHockey(game) { window.watchoutHockey.render(game, playerId, send, gameHeader('Hava Hokeyi')); }
+function renderTabu(game) {
+  clearInterval(tabuInterval);
+  const teamName = (team) => team === 'red' ? 'Kırmızı' : 'Mavi';
+  const teamPanels = ['red','blue'].map((team) => '<section class="team-panel ' + team + '"><h3>' + teamName(team) + '</h3><p>' + Object.entries(game.assignments).filter(([,value]) => value === team).map(([id]) => escapeHTML(game.names[id] || 'Oyuncu')).join(', ') + '</p>' + (game.phase === 'lobby' ? '<button class="subtle-button ' + (game.assignments[playerId] === team ? 'selected-role' : '') + '" data-tabu-team="' + team + '">Bu takıma katıl</button>' : '') + '</section>').join('');
+  if (game.phase === 'lobby') { $('#activeGame').innerHTML = gameHeader('Tabu') + '<div class="code-teams">' + teamPanels + '</div><p class="review-hint">60 saniye · 3 pas · Her takıma 3 tur</p><button class="start-button" data-action="begin-tabu">Maçı başlat</button>'; return; }
+  const participant = game.participants.includes(playerId), narrator = game.narrator === playerId, referee = game.referee === playerId;
+  const online = (id) => roomPlayers.some((player) => player.id === id && player.online !== false);
+  const score = '<div class="code-score"><span class="score-pill red">Kırmızı ' + game.scores.red + '</span><span class="score-pill blue">Mavi ' + game.scores.blue + '</span><span class="chip">Tur ' + game.round + ' / ' + game.rounds + '</span></div>';
+  const winner = game.winner === 'draw' ? 'Berabere' : teamName(game.winner) + ' kazandı';
+  let body = '', actions = '';
+  if (game.phase === 'ready' || game.phase === 'playing') {
+    const role = '<div class="code-score"><span class="chip">' + teamName(game.team) + ' anlatıyor</span><span class="chip">Anlatıcı: ' + escapeHTML(game.names[game.narrator]) + '</span><span class="chip">Hakem: ' + escapeHTML(game.names[game.referee]) + '</span></div>';
+    if (game.phase === 'ready') {
+      body = role + '<div class="tabu-wait">Hazır mısınız?</div>';
+      if (narrator) actions += '<button class="start-button" data-action="start-tabu-turn">Anlatmaya başla</button>';
+    } else {
+      body = role + '<div class="tabu-status"><b id="tabuTimer"></b><span>Doğru ' + game.stats.correct + ' · Tabu ' + game.stats.tabu + ' · Pas ' + game.stats.passes + '/' + game.maxPasses + '</span></div>';
+      body += tabuCard ? '<section class="tabu-card"><small>' + (referee ? 'Hakem kartı' : 'Anlatılacak kelime') + '</small><h3 id="tabuWord">' + escapeHTML(tabuCard.word) + '</h3><ul class="tabu-banned">' + tabuCard.banned.map((word) => '<li>' + escapeHTML(word) + '</li>').join('') + '</ul></section>' : '<div class="tabu-wait">' + (!participant ? 'Bu maçta izleyicisin.' : game.assignments[playerId] === game.team ? 'Takım arkadaşının anlattığını tahmin et.' : 'Diğer takım oynuyor.') + '</div>';
+      if (narrator) actions += '<button class="start-button" data-tabu-action="correct">Doğru +1</button><button class="subtle-button" data-tabu-action="pass"' + (game.stats.passes >= game.maxPasses ? ' disabled' : '') + '>Pas (' + (game.maxPasses-game.stats.passes) + ')</button>';
+      if (narrator || referee) actions += '<button class="subtle-button tabu-foul" data-tabu-action="tabu">Tabu −1</button>';
+    }
+    if (participant && !online(game.narrator) && game.assignments[playerId] === game.team) actions += '<button class="subtle-button" data-tabu-role="narrator">Anlatıcılığı devral</button>';
+    if (participant && !online(game.referee) && game.assignments[playerId] !== game.team) actions += '<button class="subtle-button" data-tabu-role="referee">Hakemliği devral</button>';
+  } else {
+    const last = game.history.at(-1);
+    body = '<h3 class="match-result">' + (game.phase === 'results' ? winner : 'Süre bitti · ' + teamName(last.team) + ' ' + (last.points >= 0 ? '+' : '') + last.points) + '</h3><div class="tabu-review">' + last.cards.map((card) => '<div><span>' + escapeHTML(card.word) + '</span><small>' + ({correct:'+1',tabu:'−1',pass:'Pas',time:'Süre bitti'}[card.result]) + '</small></div>').join('') + '</div>';
+    if (participant) actions = '<button class="start-button" data-action="' + (game.phase === 'results' ? 'restart-tabu' : 'next-tabu-turn') + '">' + (game.phase === 'results' ? 'Yeni maç' : 'Sonraki takım') + '</button>';
+  }
+  $('#activeGame').innerHTML = gameHeader('Tabu') + score + body + '<div class="tabu-controls">' + actions + '</div>';
+  if (game.phase === 'playing') {
+    const clock = () => {
+      const sec = Math.max(0,Math.ceil((game.deadline-Date.now())/1000));const timer = $('#tabuTimer');if(timer)timer.textContent=sec+' sn';
+      if(!sec)for(const button of $$('[data-tabu-action]'))button.disabled=true;
+    };
+    clock();tabuInterval=setInterval(clock,250);
+  }
+}
+function whoCategoryOptions(selected) { return whoCategories.map((category) => '<option' + (selected === category ? ' selected' : '') + '>' + category + '</option>').join(''); }
+function renderWhoSetup() {
+  $('#activeGame').innerHTML = gameHeader('Kimim Ben?') + '<div class="who-setup"><label for="whoCategory">Kategori</label><select id="whoCategory">' + whoCategoryOptions(whoCategory) + '</select><button class="start-button" data-action="start-whoami">Başlat</button></div>';
+}
+function renderWhoami(game) {
+  const participant = game.participants.includes(playerId), solved = game.solved.includes(playerId);
+  const mine = whoCards.find((card) => card.id === playerId);
+  const myTurn = game.phase === 'playing' && game.turn === playerId && !solved;
+  const offlineTurn = game.phase === 'playing' && !roomPlayers.some((player) => player.id === game.turn && player.online !== false);
+  if (whoDraftGame !== game.gameId || !myTurn) whoDraft = '';
+  whoDraftGame = game.gameId;
+  const cards = whoCards.filter((card) => card.id !== playerId).map((card) => '<article class="who-card" data-who-player="' + escapeHTML(card.id) + '"><div><span>' + escapeHTML(card.name) + '</span>' + (card.solved ? '<small>Buldu</small>' : game.turn === card.id ? '<small>Sıra onda</small>' : '') + '</div><strong>' + escapeHTML(card.identity || 'Gizli') + '</strong></article>').join('');
+  const self = participant ? '<section class="who-self"><span>Senin kimliğin</span><strong id="whoOwnIdentity">' + escapeHTML(mine?.identity || '???') + '</strong>' + (solved ? '<small>Doğru bildin!</small>' : game.phase === 'playing' ? '<small>Diğer oyuncular görüyor.</small>' : '') + '</section>' : '<p class="review-hint">Sonraki turda katılacaksın.</p>';
+  const order = game.solved.length ? '<p class="review-hint">Bulanlar: ' + game.solved.map((id, i) => (i + 1) + '. ' + escapeHTML(game.names[id])).join(' · ') + '</p>' : '';
+  const guessing = myTurn ? '<form id="whoGuessForm" class="who-guess"><input id="whoGuess" aria-label="Kimlik tahminin" placeholder="Ben kimim?" maxlength="80" autocomplete="off" value="' + escapeHTML(whoDraft) + '" required><button class="start-button">Tahmin et</button></form>' : '';
+  const controls = game.phase === 'playing' ? (participant && (myTurn || offlineTurn) ? '<button class="subtle-button" data-action="pass-whoami">' + (offlineTurn ? 'Çevrimdışı oyuncuyu geç' : 'Pas geç') + '</button>' : '') + (participant ? '<button class="subtle-button" data-action="finish-whoami">Turu bitir</button>' : '') : participant ? '<label for="whoNextCategory">Kategori</label><select id="whoNextCategory">' + whoCategoryOptions(game.category) + '</select><button class="start-button" data-action="next-whoami">Sonraki tur</button>' : '';
+  const status = game.phase === 'results' ? 'Tur bitti' : myTurn ? 'Sıra sende' : 'Sıra: ' + (game.names[game.turn] || '—');
+  $('#activeGame').innerHTML = gameHeader('Kimim Ben?') + '<div class="code-score"><span class="chip">' + escapeHTML(game.category) + '</span><span class="chip">Tur ' + game.round + '</span><span class="chip">' + escapeHTML(status) + '</span></div>' + self + '<div class="who-grid">' + cards + '</div>' + guessing + '<div class="who-controls">' + controls + '</div>' + order;
+}
+$('#activeGame').addEventListener('input', (event) => { if (event.target.id === 'whoGuess') whoDraft = event.target.value; });
+$('#activeGame').addEventListener('submit', (event) => {
+  if (event.target.id !== 'whoGuessForm') return;
+  event.preventDefault();
+  send({ type: 'guess-whoami', gameId: currentGame.gameId, turnId: currentGame.turnId, guess: $('#whoGuess').value });
+});
 function gameHeader(title) { return `<div class="game-title-row"><h2>${title}</h2><button class="subtle-button" data-action="menu">Oyunlar</button></div>`; }
 async function renderSpySetup() {
   currentGame = { kind: 'spyfall-setup' };
@@ -161,6 +253,8 @@ function renderCodenames(game, master) {
 }
 
 function renderGame(game, master) {
+  if (game?.kind !== 'hockey') window.watchoutHockey.destroy();
+  clearInterval(tabuInterval);
   if (!game) { currentGame = null; clearInterval(cityInterval); clearInterval(xoxInterval); $("#playerDialog").close(); $("#activeGame").classList.add("hidden"); $("#gamePicker").classList.remove("hidden"); clearInterval(timerInterval); return; }
   if (game.kind !== "city") { clearInterval(cityInterval); clearTimeout(citySaveTimer); }
   clearInterval(xoxInterval);
@@ -170,11 +264,28 @@ function renderGame(game, master) {
   if (game.kind === "spyfall") renderSpy(game);
   if (game.kind === "codenames") renderCodenames(game, masterKeys || master);
   if (game.kind === "city") renderCity(game);
+  if (game.kind === 'whoami') renderWhoami(game);
+  if (game.kind === 'tabu') renderTabu(game);
+  if (game.kind === 'hockey') renderHockey(game);
   if (isGridGame(game)) { currentGame = game; if (selectedXoxCell && (game.picks[selectedXoxCell] || game.boardId !== selectedXoxBoard || game.turnId !== selectedXoxTurn)) $("#playerDialog").close(); if (game.kind === "lol-xox") renderLol(); else renderXox(); }
 }
 $("#activeGame").addEventListener("click", (e) => {
   const action = e.target.closest("[data-action]")?.dataset.action;
   if (action === "menu") { send({ type: "stop-game" }); return; }
+  const hockeySide = e.target.closest('[data-hockey-side]'); if (hockeySide) { send({ type: 'join-hockey', gameId: currentGame.gameId, side: Number(hockeySide.dataset.hockeySide) }); return; }
+  if (action === 'begin-hockey') { send({ type: 'begin-hockey', gameId: currentGame.gameId }); return; }
+  if (action === 'leave-hockey-seat') { send({ type: 'leave-hockey-seat', gameId: currentGame.gameId }); return; }
+  if (action === 'restart-hockey') { send({ type: 'start-hockey', gameId: currentGame.gameId }); return; }
+  const tabuTeam = e.target.closest('[data-tabu-team]'); if (tabuTeam) { send({ type:'join-tabu-team',gameId:currentGame.gameId,team:tabuTeam.dataset.tabuTeam }); return; }
+  if (action === 'begin-tabu') { send({ type:'begin-tabu',gameId:currentGame.gameId }); return; }
+  if (action === 'restart-tabu') { send({ type:'start-tabu',gameId:currentGame.gameId,restart:true }); return; }
+  if (action === 'start-tabu-turn' || action === 'next-tabu-turn') { send({ type:action,gameId:currentGame.gameId,turnId:currentGame.turnId }); return; }
+  const tabuRole = e.target.closest('[data-tabu-role]'); if(tabuRole) { send({ type:'claim-tabu-role',gameId:currentGame.gameId,turnId:currentGame.turnId,role:tabuRole.dataset.tabuRole }); return; }
+  const tabuButton = e.target.closest('[data-tabu-action]'); if(tabuButton && tabuCard) { send({ type:'tabu-card-action',gameId:currentGame.gameId,turnId:currentGame.turnId,cardId:tabuCard.id,action:tabuButton.dataset.tabuAction }); return; }
+  if (action === 'start-whoami') { whoCategory = $('#whoCategory').value; send({ type: 'start-whoami', category: whoCategory }); return; }
+  if (action === 'next-whoami') { send({ type: 'next-whoami', gameId: currentGame.gameId, category: $('#whoNextCategory').value }); return; }
+  if (action === 'pass-whoami') { send({ type: 'pass-whoami', gameId: currentGame.gameId, turnId: currentGame.turnId }); return; }
+  if (action === 'finish-whoami') { send({ type: 'finish-whoami', gameId: currentGame.gameId }); return; }
   if (action === "start-spy") { send({ type: "start-spyfall", category: selectedCategory }); return; }
   if (action === "next-spy") { send({ type: "next-spy", gameId: currentGame.gameId }); return; }
   if (action === "spy-vote") { send({ type: "start-spy-vote", gameId: currentGame.gameId }); return; }
@@ -253,7 +364,7 @@ function teamSelect(id, axis, options) {
   const option = (item) => '<option value="' + item.id + '"' + (item.id === id ? ' selected' : '') + '>' + escapeHTML(item.name) + '</option>';
   const leagues = footballCatalog.leagues || [];
   const contents = leagues.length && options.some((item) => item.league)
-    ? leagues.map((league) => '<optgroup label="' + escapeHTML(league.country + ' · ' + league.name) + '">' + options.filter((item) => item.league === league.id).map(option).join('') + '</optgroup>').join('')
+    ? leagues.filter((league) => options.some((item) => item.league === league.id)).map((league) => '<optgroup label="' + escapeHTML(league.country + ' · ' + league.name) + '">' + options.filter((item) => item.league === league.id).map(option).join('') + '</optgroup>').join('')
     : options.map(option).join('');
   return '<select class="xox-team" data-axis="' + axis + '" aria-label="Takım veya ülke">' + contents + '</select>';
 }
@@ -269,16 +380,17 @@ function renderXox() {
   const status = currentGame.winner ? currentGame.winner === 'draw' ? 'Berabere' : currentGame.winner + ' kazandı' : 'Sıra: ' + currentGame.turn;
   const turnBar = '<div class="code-score">' + teams + '<span class="chip">' + status + '</span>' + (!currentGame.winner ? '<b id="xoxTimer"></b>' : '') + '</div>'; 
   const header = '<div></div>' + top.map((t, i) => '<div class="xox-label">' + footballImage(topIds[i], 'football-logo') + '<span>' + escapeHTML(t) + '</span></div>').join('');
-  const cells = side.map((team, r) => '<div class="xox-label">' + (mode === 'clubs' ? footballImage(sideIds[r], 'football-logo') : '') + '<span>' + escapeHTML(team) + '</span></div>' + top.map((colTeam, c) => {
+  const cells = side.map((team, r) => '<div class="xox-label">' + (mode !== 'countries' ? footballImage(sideIds[r], 'football-logo') : '') + '<span>' + escapeHTML(team) + '</span></div>' + top.map((colTeam, c) => {
     const key = r + '-' + c;
     return '<button class="xox-cell ' + (picks[key] ? 'filled owner-' + currentGame.owners?.[key] + (currentGame.winningLine?.includes(key) ? ' winning-cell' : '') : '') + '" data-xox-cell="' + key + '" aria-label="' + escapeHTML(team + ' ve ' + colTeam) + '"' + (picks[key] || !canPick ? ' disabled' : '') + '>' + (picks[key] && currentGame.pickedPlayerIds?.[key] ? footballImage(currentGame.pickedPlayerIds[key], 'player-photo') : '') + '<span>' + escapeHTML(picks[key] ? currentGame.owners[key] + ' · ' + picks[key] : '+') + '</span></button>';
   }).join('')).join('');
   const configure = !currentGame.series.history.length && !Object.keys(picks).length && !currentGame.winner;
   const seriesBar = '<div class="code-score"><span class="chip">Best of 3</span><span class="chip">X <b>' + currentGame.series.scores.X + '</b> – <b>' + currentGame.series.scores.O + '</b> O</span>' + (currentGame.series.finished ? '<span class="chip score-winner">Seriyi ' + currentGame.series.winner + ' kazandı</span>' : '') + '</div>';
   const nextButton = currentGame.winner ? '<button class="start-button" data-action="new-xox">' + (currentGame.series.finished ? 'Yeni seri' : currentGame.winner === 'draw' ? 'Tekrar oyna' : 'Sonraki tahta') + '</button>' : '';
-  const modes = '<div class="category-row"><button class="category-chip ' + (mode === 'clubs' ? 'selected' : '') + '" data-xox-mode="clubs">Takım × Takım</button><button class="category-chip ' + (mode === 'countries' ? 'selected' : '') + '" data-xox-mode="countries">Takım × Ülke</button></div>';
-  const settings = '<details><summary>Seçimleri değiştir</summary><div class="xox-settings"><div><label>Sütunlar</label><div class="category-row">' + topIds.map((id, i) => teamSelect(id, 'top-' + i, footballCatalog.clubs)).join('') + '</div></div><div><label>Satırlar</label><div class="category-row">' + sideIds.map((id, i) => teamSelect(id, 'side-' + i, mode === 'countries' ? footballCatalog.countries : footballCatalog.clubs)).join('') + '</div></div></div></details>';
-  $("#activeGame").innerHTML = gameHeader("Futbol XOX") + seriesBar + (configure ? modes : "") + turnBar + '<div class="xox-board">' + header + cells + '</div><div class="active-foot">' + (canPick ? '<button class="subtle-button" data-action="pass-xox">Pas geç</button>' : '') + nextButton + '</div>' + (configure ? settings : '') + '<details id="footballMediaCredits" class="media-credits hidden"><summary>Görsel kaynakları</summary><div id="footballMediaCreditList"></div></details>';
+  const modes = '<div class="category-row"><button class="category-chip ' + (mode === 'clubs' ? 'selected' : '') + '" data-xox-mode="clubs">Takım × Takım</button><button class="category-chip ' + (mode === 'countries' ? 'selected' : '') + '" data-xox-mode="countries">Takım × Ülke</button><button class="category-chip ' + (mode === 'superlig' ? 'selected' : '') + '" data-xox-mode="superlig">Sadece Süper Lig</button></div>';
+  const selectableClubs = mode === 'superlig' ? footballCatalog.clubs.filter((club) => club.league === 'turkey') : footballCatalog.clubs;
+  const settings = '<details><summary>Seçimleri değiştir</summary><div class="xox-settings"><div><label>Sütunlar</label><div class="category-row">' + topIds.map((id, i) => teamSelect(id, 'top-' + i, selectableClubs)).join('') + '</div></div><div><label>Satırlar</label><div class="category-row">' + sideIds.map((id, i) => teamSelect(id, 'side-' + i, mode === 'countries' ? footballCatalog.countries : selectableClubs)).join('') + '</div></div></div></details>';
+  $("#activeGame").innerHTML = gameHeader("Futbol XOX") + seriesBar + (configure ? modes : "") + turnBar + '<div class="xox-board">' + header + cells + '</div><div class="active-foot">' + (canPick ? '<button class="subtle-button" data-action="pass-xox">Pas geç</button>' : '') + nextButton + '</div>' + (configure ? settings : '') + '<details class="media-credits"><summary>Veri kaynakları</summary><p>Sezon ' + escapeHTML(footballCatalog.season || '') + ' · Kadrolar: ' + escapeHTML(footballCatalog.seasonCheckedAt?.slice(0, 10) || '') + '.</p><p><a href="https://www.wikidata.org/" target="_blank" rel="noopener noreferrer">Wikidata</a> (CC0) ve <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia katkıda bulunanları</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Kadro ve kariyer kayıtları birleştirildi. Güncel A takım kadrosundaki oyuncular da kabul edilir.</p></details>' + '<details id="footballMediaCredits" class="media-credits hidden"><summary>Görsel kaynakları</summary><div id="footballMediaCreditList"></div></details>';
   hydrateFootballMedia();
   clearInterval(xoxInterval);
   if (!currentGame.winner) {

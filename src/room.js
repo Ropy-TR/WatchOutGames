@@ -1,5 +1,8 @@
 import { createFootballBoard, footballCatalog, validateFootballPick, hasAvailableFootballMove } from './football.js';
 import { createLolBoard, lolDataVersion, validateLolPick, hasAvailableLolMove } from './lol.js';
+import { createWhoami, whoamiView, whoamiCards, advanceWhoami, guessWhoami } from './whoami.js';
+import { createTabuLobby, joinTabuTeam, beginTabu, startTabuTurn, nextTabuTurn, claimTabuRole, tabuAction, expireTabu, tabuView, privateTabuCard } from './tabu.js';
+import { createHockey, joinHockey, beginHockey, hockeyPresence, hockeyInput, advanceHockey, hockeyView } from './hockey.js';
 import { cleanAnswers, finishCity, cityScores, createCodeLobby, beginCode, pickCode, endCodeTurn, secureIndex, advanceXox, expireXox, xoxOutcome } from './game-rules.js';
 import { createSpyMatch, beginSpyVote, resolveSpyVote, beginSpyGuess, submitSpyGuess, nextSpyRound, expireSpy, publicSpy, createCityMatch, cityMatchView, nextCityRound, createXoxSeries, recordXoxResult } from './match-rules.js';
 
@@ -7,10 +10,44 @@ const dataVersion = footballCatalog().version;
 const isXox = (game) => game?.kind === 'xox' || game?.kind === 'lol-xox';
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 export class Room {
-  constructor(state) { this.state = state; this.storage = state.storage; this.clients = new Map(); this.queue = Promise.resolve(); }
+  constructor(state, env = {}) { this.state = state; this.storage = state.storage; this.env = env; this.clients = new Map(); this.queue = Promise.resolve(); this.lastListing = ''; this.listedAt = 0; }
+  async publishLobby(room) {
+    if (!this.env.LOBBIES || !room.code) return;
+    const online = new Set([...this.clients].filter(([socket]) => socket.readyState === 1).map(([, id]) => id));
+    const occupied = room.members.filter(m => online.has(m.id) || m.disconnectedAt > Date.now() - 15 * 60000).length;
+    const entry = { code: room.code, visible: room.listed === true, playerCount: online.size, full: occupied >= 8, game: room.game?.kind || '' };
+    const serialized = JSON.stringify(entry);
+    if (serialized === this.lastListing && Date.now() - this.listedAt < 25000) return;
+    try {
+      const response = await this.env.LOBBIES.get(this.env.LOBBIES.idFromName('public')).fetch('https://directory/', { method: 'POST', body: serialized });
+      if (response.ok) { this.lastListing = serialized; this.listedAt = Date.now(); }
+    } catch { /* Discovery downtime must not interrupt an active game. */ }
+  }
   // WebSocket handlers can interleave while awaiting storage. Serialize all mutations.
   enqueue(task) { const result = this.queue.then(task); this.queue = result.catch(() => {}); return result; }
+  connectedIds() { return new Set([...this.clients].filter(([client]) => client.readyState === 1).map(([, id]) => id)); }
+  syncHockey(room) {
+    if (room.game?.kind === 'hockey') { this.hockeyRoom = room; hockeyPresence(room.game, this.connectedIds()); }
+    else this.hockeyRoom = null;
+  }
+  hockeyLoop(game) {
+    if (game?.kind !== 'hockey' || game.phase !== 'playing' || !this.clients.size) { clearInterval(this.hockeyTimer); this.hockeyTimer = null; return; }
+    if (this.hockeyTimer) return;
+    this.hockeyTimer = setInterval(() => {
+      if (this.hockeyPending) return;
+      this.hockeyPending = true;
+      this.enqueue(async () => {
+        const room = this.hockeyRoom;
+        if (room?.game?.kind !== 'hockey' || room.game.phase !== 'playing') { this.hockeyLoop(null); return; }
+        hockeyPresence(room.game, this.connectedIds());
+        if (room.game.phase !== 'playing') { await this.save(room); return; }
+        if (advanceHockey(room.game)) await this.save(room);
+        else this.broadcast({ type: 'hockey-frame', game: hockeyView(room.game) });
+      }).catch(() => { this.hockeyLoop(null); }).finally(() => { this.hockeyPending = false; });
+    }, 33);
+  }
   async loadRoom() {
+    if (this.hockeyRoom) return this.hockeyRoom;
     const room = await this.storage.get('room');
     if (!room) return room;
     // Rooms created before turn/role validation was introduced need a fresh game.
@@ -19,6 +56,10 @@ export class Room {
       room.game = null;
       await this.storage.put('room', room);
       await this.schedule(null);
+    }
+    if (room.game?.kind === 'hockey') {
+      this.hockeyRoom = room;
+      if (room.game.phase === 'playing') { room.game.phase = 'paused'; room.game.pausedAt = Date.now(); }
     }
     return room;
   }
@@ -29,7 +70,7 @@ export class Room {
       if (!body.password || String(body.password).length > 32) return json({ error: 'Şifre 1–32 karakter olmalı.' }, 400);
       return this.enqueue(async () => {
         if (await this.storage.get('room')) return json({ error: 'Oda kodu kullanılıyor. Tekrar dene.' }, 409);
-        await this.storage.put('room', { password: String(body.password), members: [], game: null, createdAt: Date.now() });
+        await this.storage.put('room', { password: String(body.password), code: body.code, listed: body.listed === true, members: [], game: null, createdAt: Date.now() });
         return json({ ok: true });
       });
     }
@@ -62,8 +103,10 @@ export class Room {
       } else member.nickname = nickname;
       member.online = true; delete member.disconnectedAt;
       this.clients.set(socket, member.id);
+      this.syncHockey(room);
       await this.storage.put('room', room);
       await this.schedule(room.game);
+      await this.publishLobby(room);
       socket.send(JSON.stringify({ type: 'joined', playerId: member.id, sessionToken: member.token, room: this.publicRoom(room) }));
       this.broadcast({ type: 'room', room: this.publicRoom(room) });
       this.sendGame(room);
@@ -71,6 +114,7 @@ export class Room {
     }
     const playerId = this.clients.get(socket);
     if (!playerId || !room.members.some((m) => m.id === playerId)) return;
+    if (msg.type === 'heartbeat') { await this.publishLobby(room); return; }
     const game = room.game;
     const connected = new Set([...this.clients].filter(([client]) => client.readyState === 1).map(([, id]) => id));
     const active = room.members.filter((m) => connected.has(m.id));
@@ -78,10 +122,66 @@ export class Room {
       if (msg.type === 'leave') {
         room.members = room.members.filter((m) => m.id !== playerId);
         for (const [client, id] of this.clients) if (id === playerId) this.clients.delete(client);
-        if (game?.phase === 'lobby') delete game.assignments[playerId];
+        if (game?.phase === 'lobby' && game.assignments) delete game.assignments[playerId];
+        if (game?.kind === 'hockey' && game.phase === 'lobby') game.players = game.players.map(id => id === playerId ? null : id);
         await this.save(room); this.broadcast({ type: 'room', room: this.publicRoom(room) }); return;
       }
       if (msg.type === 'stop-game') room.game = null;
+      else if (msg.type === 'start-hockey') {
+        if (game?.kind === 'hockey' && game.phase !== 'finished') throw new Error('Önce mevcut maçı bitir veya oyun seçimine dön.');
+        if (game?.kind === 'hockey' && (msg.gameId !== game.gameId || !game.players.includes(playerId))) throw new Error('Yeni maçı oyunculardan biri açabilir.');
+        const players = game?.kind === 'hockey' ? game.players.map(id => active.find(member => member.id === id)).filter(Boolean) : active;
+        room.game = createHockey(players, playerId);
+      }
+      else if (['join-hockey', 'leave-hockey-seat', 'begin-hockey', 'move-hockey'].includes(msg.type) && game?.kind === 'hockey') {
+        if (msg.gameId !== game.gameId) return;
+        if (msg.type === 'move-hockey') { hockeyInput(game, playerId, msg); return; }
+        if (msg.type === 'leave-hockey-seat') {
+          if (game.phase !== 'lobby') throw new Error('Maç başladı.');
+          game.players = game.players.map(id => id === playerId ? null : id);
+        }
+        else if (msg.type === 'join-hockey') joinHockey(game, playerId, msg.side, connected, active);
+        else beginHockey(game, playerId, connected);
+      }
+      else if (msg.type === 'start-tabu') {
+        if (game?.kind === 'tabu' && (game.phase !== 'results' || !msg.restart || msg.gameId !== game.gameId || !game.participants.includes(playerId))) throw new Error('Devam eden Tabu maçını bitir.');
+        room.game = createTabuLobby(active);
+      }
+      else if (['join-tabu-team','begin-tabu','start-tabu-turn','tabu-card-action','next-tabu-turn','claim-tabu-role'].includes(msg.type) && game?.kind === 'tabu') {
+        if (msg.gameId !== game.gameId) throw new Error('Maç değişti.');
+        if (msg.type === 'join-tabu-team') joinTabuTeam(game,playerId,msg.team);
+        else if (msg.type === 'begin-tabu') beginTabu(game,active);
+        else {
+          if (!game.participants.includes(playerId) || msg.turnId !== game.turnId) throw new Error('Bu maça katılmıyorsun veya sıra değişti.');
+          if (msg.type === 'start-tabu-turn') startTabuTurn(game,playerId);
+          if (msg.type === 'tabu-card-action') tabuAction(game,playerId,msg.action,msg.cardId);
+          if (msg.type === 'next-tabu-turn') nextTabuTurn(game,connected);
+          if (msg.type === 'claim-tabu-role') claimTabuRole(game,playerId,msg.role,connected);
+        }
+      }
+      else if (msg.type === 'start-whoami') {
+        if (game?.kind === 'whoami' && game.phase !== 'results') throw new Error('Önce mevcut turu bitir.');
+        room.game = createWhoami(active, msg.category);
+      }
+      else if (['guess-whoami', 'pass-whoami', 'finish-whoami', 'next-whoami'].includes(msg.type) && game?.kind === 'whoami') {
+        if (msg.gameId !== game.gameId || !game.participants.includes(playerId)) throw new Error('Bu tura katılmıyorsun veya tur değişti.');
+        if (msg.type === 'next-whoami') {
+          if (game.phase !== 'results') throw new Error('Tur henüz bitmedi.');
+          room.game = createWhoami(active, msg.category || game.category, game.round + 1);
+        } else {
+          if (game.phase !== 'playing') throw new Error('Tur bitti.');
+          if (msg.type === 'finish-whoami') { game.phase = 'results'; game.turn = null; game.turnId = null; }
+          else {
+            if (msg.turnId !== game.turnId) throw new Error('Sıra değişti.');
+            if (msg.type === 'guess-whoami') {
+              if (!guessWhoami(game, playerId, msg.guess, connected)) this.sendError(socket, 'Doğru değil. Sıra geçti.');
+            } else {
+              if (game.turn !== playerId && connected.has(game.turn)) throw new Error('Sıra sende değil.');
+              advanceWhoami(game, connected);
+            }
+          }
+        }
+      }
       else if (msg.type === 'start-spyfall') {
         if (game?.kind === 'spyfall' && (!game.match.finished || !msg.restart || msg.gameId !== game.gameId)) throw new Error('Devam eden maç için sonraki turu kullan.');
         room.game = createSpyMatch(active, msg.category);
@@ -178,12 +278,15 @@ export class Room {
     } catch (error) { this.sendError(socket, error.message); }
   }
   async save(room) {
+    this.syncHockey(room);
     await this.storage.put('room', room);
     await this.schedule(room.game);
+    await this.publishLobby(room);
     this.sendGame(room);
   }
   async schedule(game) {
-    const deadline = game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
+    this.hockeyLoop(game);
+    const deadline = game?.kind === 'tabu' && game.phase === 'playing' ? game.deadline : game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
     if (deadline && this.storage.setAlarm) await this.storage.setAlarm(deadline);
     else if (this.storage.deleteAlarm) await this.storage.deleteAlarm();
   }
@@ -192,6 +295,7 @@ export class Room {
     if (!game) return;
     let changed = false;
     if (game.kind === 'spyfall') changed = expireSpy(game);
+    if (game.kind === 'tabu') changed = expireTabu(game);
     if (game.kind === 'city' && game.phase === 'playing' && Date.now() >= game.startedAt + game.duration * 1000) { finishCity(game); changed = true; }
     if (isXox(game) && game.deadline) changed = expireXox(game) || changed;
     if (changed) await this.save(room);
@@ -203,11 +307,16 @@ export class Room {
     const room = await this.loadRoom(); if (!room) return;
     const member = room.members.find((m) => m.id === id);
     if (member) { member.online = false; member.disconnectedAt = Date.now(); }
-    await this.storage.put('room', room); await this.schedule(room.game); this.broadcast({ type: 'room', room: this.publicRoom(room) });
+    this.syncHockey(room);
+    await this.storage.put('room', room); await this.schedule(room.game); await this.publishLobby(room); this.broadcast({ type: 'room', room: this.publicRoom(room) });
+    if (room.game?.kind === 'hockey') this.sendGame(room);
   }); }
   publicRoom(room) { return { players: room.members.map(({ id, nickname, online }) => ({ id, nickname, online })), game: this.publicGame(room.game, room.members) }; }
   publicGame(game, members = []) {
     if (!game) return null;
+    if (game.kind === 'hockey') return hockeyView(game);
+    if (game.kind === 'tabu') return tabuView(game,members);
+    if (game.kind === 'whoami') return whoamiView(game);
     if (game.kind === 'spyfall') return publicSpy(game);
     if (game.kind === 'city') return { kind: game.kind, gameId: game.gameId, phase: game.phase, letter: game.letter, categories: game.categories, startedAt: game.startedAt, duration: game.duration, names: game.names, match: cityMatchView(game), submittedIds: Object.keys(game.submissions), ...(game.phase === 'results' ? { submissions: game.submissions, scores: cityScores(game), invalid: game.invalid } : {}) };
     if (isXox(game)) return game.boardId && game.dataVersion === (game.kind === 'lol-xox' ? lolDataVersion : dataVersion) ? { kind: game.kind, top: game.top, side: game.side, topIds: game.topIds, sideIds: game.sideIds, picks: game.picks, ...(game.kind === 'lol-xox' ? { pickedChampionIds: game.playerPicks } : { pickedPlayerIds: game.playerPicks }), round: game.round, boardId: game.boardId, mode: game.mode, dataVersion: game.dataVersion, teams: game.teams, names: game.names, owners: game.owners, turn: game.turn, turnId: game.turnId, deadline: game.deadline, winner: game.winner, winningLine: game.winningLine, series: game.series } : null;
@@ -222,6 +331,8 @@ export class Room {
       if (game?.kind === 'codenames' && game.phase !== 'lobby' && game.assignments[id]?.role === 'master') payload.master = game.keys;
       if (game?.kind === 'city') payload.mine = game.submissions[id] || game.drafts?.[id] || {};
       if (game?.kind === 'spyfall') payload.role = game.roles[id] || null;
+      if (game?.kind === 'whoami') payload.identityCards = whoamiCards(game, id);
+      if (game?.kind === 'tabu') payload.tabuCard = privateTabuCard(game,id);
       client.send(JSON.stringify(payload));
     }
   }

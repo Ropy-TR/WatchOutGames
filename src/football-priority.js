@@ -4,21 +4,22 @@ const preferred = new Set(Object.values(priority.leagues).flat().map((club) => c
 export const allowedFootballClubIds = preferred;
 const turkish = new Set(priority.leagues.turkey.map((club) => club.id));
 export function drawFootballPlan(mode, randomIndex) {
+  if (mode === 'superlig') return { profile: 'superlig', pool: [...turkish], topTurkish: null, sideTurkish: null };
   const elite = randomIndex(100) < priority.eliteBoardPercent;
-  const withTurkish = randomIndex(100) < priority.turkishBoardPercent;
-  let turkishId = null;
-  let turkishCandidates = [];
-  if (withTurkish) {
+  const withSide = mode === 'clubs' && randomIndex(100) < priority.turkishSidePercent;
+  const withTop = randomIndex(100) < (mode === 'countries' ? priority.turkishBoardPercent : priority.turkishTopPercent);
+  function axis(include) {
+    if (!include) return null;
     const bigFour = randomIndex(100) < priority.turkishBigFourPercent;
     const fourIds = priority.turkishBigFour.map((club) => club.id);
     const candidates = bigFour ? fourIds : [...turkish].filter((id) => !fourIds.includes(id));
-    turkishCandidates = candidates;
-    turkishId = candidates[randomIndex(candidates.length)];
+    return { candidates, group: bigFour ? 'big-four' : 'other', slot: randomIndex(3) };
   }
+  const sideTurkish = axis(withSide), topTurkish = axis(withTop);
   return {
     profile: elite ? 'elite' : 'selected-clubs',
     pool: [...(elite ? priority.worldTop30.map((club) => club.id) : preferred)].filter((id) => preferred.has(id) && !turkish.has(id)),
-    turkishId, turkishCandidates, slot: withTurkish ? randomIndex(mode === 'countries' ? 3 : 6) : -1
+    topTurkish, sideTurkish
   };
 }
 export const clubDrawWeight = (id) => preferred.has(id) ? priority.weight : 1;

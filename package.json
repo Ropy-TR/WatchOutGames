@@ -9,7 +9,8 @@
     "data:update": "node scripts/update-football.mjs",
     "clubs:update": "node scripts/update-clubs.mjs",
     "lol:update": "node scripts/update-lol.mjs",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "season:update": "node scripts/update-football-season.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
