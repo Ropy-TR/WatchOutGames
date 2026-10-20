@@ -4,7 +4,7 @@ let categories = ['Mekânlar'];
 let gamesCatalogPromise;
 let whoCards = [], whoDraft = '', whoDraftGame = '', whoCategory = 'Ünlüler';
 let tabuCard = null, tabuInterval;
-let battleshipMine = null, triviaMine = null;
+let battleshipMine = null, triviaMine = null, oldMaidMine = null, drawingMine = null;
 const whoCategories = ['Ünlüler', 'Meslekler', 'Karışık'];
 function loadGamesCatalog() { return gamesCatalogPromise ||= fetch('/api/games').then((r) => { if (!r.ok) throw new Error('Kategoriler yüklenemedi.'); return r.json(); }).then((data) => { categories = data.spyCategories; }).catch((error) => { gamesCatalogPromise = null; throw error; }); }
 const cityCategories = ["İsim", "Şehir", "Ülke", "Hayvan", "Bitki", "Yemek", "Eşya", "Ünlü"];
@@ -43,7 +43,7 @@ function toast(text) { const el = $("#toast"); el.textContent = text; el.classLi
 function notice(text) { const n = $("#roomNotice"); n.textContent = text; n.classList.toggle("hidden", !text); }
 let lobbyRefresh = null, lobbyRequest = 0;
 function setTab(tab) { $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab)); $("#joinForm").classList.toggle("hidden", tab !== "join"); $("#createForm").classList.toggle("hidden", tab !== "create"); $('#lobbyBrowser').classList.toggle('hidden', tab !== 'browse'); clearInterval(lobbyRefresh); if (tab === 'browse') { loadLobbies(); lobbyRefresh = setInterval(() => { if (!document.hidden && !$('#landing').classList.contains('hidden')) loadLobbies(); }, 10000); } }
-const lobbyGames = { xox: 'Futbol XOX', 'lol-xox': 'LoL XOX', spyfall: 'Spyfall', codenames: 'Codenames', city: 'İsim Şehir', whoami: 'Kimim Ben?', tabu: 'Tabu', hockey: 'Hava Hokeyi', battleship: 'Amiral Battı', 'quiz-football': 'Futbol Bilgi Düellosu', 'quiz-lol': 'LoL Bilgi Düellosu', flags: 'Bayrak Yarışı' };
+const lobbyGames = { xox: 'Futbol XOX', 'lol-xox': 'LoL XOX', spyfall: 'Spyfall', codenames: 'Codenames', city: 'İsim Şehir', whoami: 'Kimim Ben?', tabu: 'Tabu', hockey: 'Hava Hokeyi', battleship: 'Amiral Battı', 'quiz-football': 'Futbol Bilgi Düellosu', 'quiz-lol': 'LoL Bilgi Düellosu', flags: 'Bayrak Yarışı', 'old-maid': 'Papaz Kimde?', drawing: 'Çiz & Tahmin Et' };
 async function loadLobbies() {
   const requestId = ++lobbyRequest;
   const list = $('#lobbyList'); if (!list.children.length) list.textContent = 'Yükleniyor…';
@@ -84,7 +84,8 @@ function connect(code, password, nickname) {
       if (currentGame?.kind === 'hockey' && msg.game?.gameId === currentGame.gameId && msg.game.tick >= currentGame.tick) { currentGame = msg.game; window.watchoutHockey.update(currentGame); }
       return;
     }
-    if (msg.type === 'error') { toast(msg.message); window.watchoutTableGames.recover(); if (!currentGame) renderGame(null); return; }
+    if (msg.type === 'drawing-ink') { window.watchoutPartyGames.ink(msg); return; }
+    if (msg.type === 'error') { toast(msg.message); window.watchoutTableGames.recover(); window.watchoutPartyGames.recover(); if (!currentGame) renderGame(null); return; }
     if (msg.type === 'joined') {
       window.watchoutTableGames.resetPending();
       playerId = msg.playerId;
@@ -93,6 +94,7 @@ function connect(code, password, nickname) {
     }
     if (msg.type === 'room') {
       updatePlayers(msg.room);
+      if (['old-maid','drawing'].includes(currentGame?.kind) && currentGame.phase === 'lobby' && msg.room.game?.kind === currentGame.kind) { currentGame = msg.room.game; renderPartyGame(currentGame); }
       if (currentGame?.kind === 'whoami') renderWhoami(currentGame);
       if (['battleship','quiz','flags'].includes(currentGame?.kind) && currentGame.phase === 'lobby' && msg.room.game?.kind === currentGame.kind) { currentGame = msg.room.game; renderTableGame(currentGame); }
       if (currentGame?.kind === 'hockey' && currentGame.phase === 'lobby' && msg.room.game?.kind === 'hockey') { currentGame = msg.room.game; renderHockey(currentGame); }
@@ -105,6 +107,7 @@ function connect(code, password, nickname) {
       tabuCard = msg.tabuCard || null;
       battleshipMine = msg.battleshipMine || null;
       triviaMine = msg.triviaMine || null;
+      oldMaidMine = msg.oldMaidMine || null; drawingMine = msg.drawingMine || null;
       const changedCode = currentGame?.gameId !== msg.game?.gameId;
       const hadMaster = Boolean(masterKeys);
       masterKeys = Array.isArray(msg.master) ? msg.master : null;
@@ -116,6 +119,7 @@ function connect(code, password, nickname) {
   };
   connection.onclose = () => {
     if (socket !== connection || !current) return;
+    window.watchoutPartyGames.connectionLost();
     notice('Bağlantı yenileniyor…');
     setTimeout(() => { if (socket === connection && current) connect(code, password, nickname); }, 1500);
   };
@@ -129,14 +133,15 @@ function send(obj) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON
 function copy(value, message) { if (!navigator.clipboard) return toast(value); navigator.clipboard.writeText(value).then(() => toast(message)).catch(() => toast(value)); }
 $("#copyCode").onclick = () => copy(current.code, "Oda kodu kopyalandı.");
 $("#shareRoom").onclick = () => copy(`${location.origin}/?oda=${current.code}`, "Davet bağlantısı kopyalandı. Şifreyi ayrıca paylaş.");
-$("#leaveRoom").onclick = () => { window.watchoutTableGames.clear(); window.watchoutHockey.destroy(); send({ type: "leave" }); if (current) localStorage.removeItem("wg-session-" + current.code); clearInterval(xoxInterval); clearInterval(tabuInterval); clearTimeout(citySaveTimer); current = null; currentGame = null; myRole = null; masterKeys = null; $("#playerDialog").close(); socket?.close(); socket = null; clearInterval(timerInterval); clearInterval(cityInterval); $("#room").classList.add("hidden"); $("#landing").classList.remove("hidden"); $("#activeGame").classList.add("hidden"); $("#gamePicker").classList.remove("hidden"); window.scrollTo(0, 0); };
+$("#leaveRoom").onclick = () => { window.watchoutPartyGames.clear(); window.watchoutTableGames.clear(); window.watchoutHockey.destroy(); send({ type: "leave" }); if (current) localStorage.removeItem("wg-session-" + current.code); clearInterval(xoxInterval); clearInterval(tabuInterval); clearTimeout(citySaveTimer); current = null; currentGame = null; myRole = null; masterKeys = null; $("#playerDialog").close(); socket?.close(); socket = null; clearInterval(timerInterval); clearInterval(cityInterval); $("#room").classList.add("hidden"); $("#landing").classList.remove("hidden"); $("#activeGame").classList.add("hidden"); $("#gamePicker").classList.remove("hidden"); window.scrollTo(0, 0); };
 
 $$(".picker-card").forEach((card) => card.addEventListener("click", () => startGameMenu(card.dataset.game)));
 function startGameMenu(kind) {
   notice(""); $("#gamePicker").classList.add("hidden"); const view = $("#activeGame"); view.classList.remove("hidden");
-  if (kind === "spy") renderSpySetup(); else if (kind === "code") send({ type: "start-codenames" }); else if (kind === "city") startCity(); else if (kind === "xox") startXox(); else if (kind === "lol") startLol(); else if (kind === 'whoami') renderWhoSetup(); else if (kind === 'tabu') send({ type: 'start-tabu' }); else if (kind === 'hockey') send({ type: 'start-hockey' }); else if (kind === 'battleship') send({ type: 'start-battleship' }); else if (kind === 'flags') send({ type: 'start-flags' }); else if (kind.startsWith('quiz-')) send({ type: 'start-quiz', category: kind.slice(5) });
+  if (kind === "spy") renderSpySetup(); else if (kind === "code") send({ type: "start-codenames" }); else if (kind === "city") startCity(); else if (kind === "xox") startXox(); else if (kind === "lol") startLol(); else if (kind === 'whoami') renderWhoSetup(); else if (kind === 'tabu') send({ type: 'start-tabu' }); else if (kind === 'hockey') send({ type: 'start-hockey' }); else if (kind === 'old-maid') send({ type: 'start-old-maid' }); else if (kind === 'drawing') send({ type: 'start-drawing' }); else if (kind === 'battleship') send({ type: 'start-battleship' }); else if (kind === 'flags') send({ type: 'start-flags' }); else if (kind.startsWith('quiz-')) send({ type: 'start-quiz', category: kind.slice(5) });
 }
 function renderHockey(game) { window.watchoutHockey.render(game, playerId, send, gameHeader('Hava Hokeyi')); }
+function renderPartyGame(game) { window.watchoutPartyGames.render(game, { id: playerId, oldMaidMine, drawingMine, online: roomPlayers.filter(player => player.online !== false).map(player => player.id), names: Object.fromEntries(roomPlayers.map(player => [player.id, player.nickname])), send, header: gameHeader }); }
 function renderTableGame(game) { window.watchoutTableGames.render(game, { id: playerId, mine: battleshipMine, triviaMine, roomCode: current?.code || '', online: roomPlayers.filter(player => player.online !== false).map(player => player.id), names: Object.fromEntries(roomPlayers.map(player => [player.id, player.nickname])), send, header: gameHeader }); }
 function renderTabu(game) {
   clearInterval(tabuInterval);
@@ -264,6 +269,7 @@ function xoxTeamChips(game) {
   return ['X', 'O'].map(team => '<span class="chip xox-team-chip owner-' + team + '"><b>' + team + '</b><span>' + (game.teams?.[team] || []).map(id => escapeHTML(game.names[id] || 'Oyuncu')).join(', ') + '</span>' + (mine === team ? '<small>SEN</small>' : '') + '</span>').join('');
 }
 function renderGame(game, master) {
+  if (!['old-maid','drawing'].includes(game?.kind)) window.watchoutPartyGames.clear();
   if (!['battleship','quiz','flags'].includes(game?.kind)) window.watchoutTableGames.clear();
   if (!isGridGame(game)) delete $('#activeGame').dataset.xoxTeam;
   if (game?.kind !== 'hockey') window.watchoutHockey.destroy();
@@ -280,12 +286,14 @@ function renderGame(game, master) {
   if (game.kind === 'whoami') renderWhoami(game);
   if (game.kind === 'tabu') renderTabu(game);
   if (game.kind === 'hockey') renderHockey(game);
+  if (['old-maid','drawing'].includes(game.kind)) renderPartyGame(game);
   if (['battleship','quiz','flags'].includes(game.kind)) renderTableGame(game);
   if (isGridGame(game)) { currentGame = game; if (selectedXoxCell && (game.picks[selectedXoxCell] || game.boardId !== selectedXoxBoard || game.turnId !== selectedXoxTurn)) $("#playerDialog").close(); if (game.kind === "lol-xox") renderLol(); else renderXox(); }
 }
 $("#activeGame").addEventListener("click", (e) => {
   const action = e.target.closest("[data-action]")?.dataset.action;
   if (action === "menu") { send({ type: "stop-game" }); return; }
+  if (window.watchoutPartyGames.click(e)) return;
   if (window.watchoutTableGames.click(e)) return;
   const hockeySide = e.target.closest('[data-hockey-side]'); if (hockeySide) { send({ type: 'join-hockey', gameId: currentGame.gameId, side: Number(hockeySide.dataset.hockeySide) }); return; }
   if (action === 'begin-hockey') { send({ type: 'begin-hockey', gameId: currentGame.gameId }); return; }

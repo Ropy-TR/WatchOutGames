@@ -4,7 +4,7 @@ Oda kodu ve şifresiyle oynanan mini oyun sitesi. Arayüz Cloudflare Workers sta
 
 ## Kurulum yapmadan GitHub ile yayınlama
 
-Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.9` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.9` ve oyun listesinde `hockey` döndürmeli.
+Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.10` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.10` ve oyun listesinde `hockey` döndürmeli.
 
 ## Yerelde çalıştırma
 
@@ -197,8 +197,21 @@ Bu dört kart mevcut Room binding'ini kullanır; yeni Cloudflare binding veya mi
 - Arama metni, imleç ve odak diğer oyuncular cevap verdiğinde korunur; her yeni soruda sıfırlanır. Yanlış veya listede olmayan serbest metin gönderilmez; cevap için listeden seçim gerekir.
 - Eski dört seçenekli Bayrak Yarışı kayıtları bu sürümde oyun menüsüne döner; güncellemeden sonra yeni Bayrak Yarışı başlatılır.
 
-## Hokeyde basmadan fare kontrolü — 2026.10.21.9
+## Hokeyde basmadan fare kontrolü — 2026.10.21.10
 
 - Masa üzerinde fareyi hareket ettirmek yeterlidir; tıklamak veya basılı tutmak gerekmez. Fare konumu masaya birebir eşlenir. Göreli mesafe çarpanı ve sürükleme başlangıcı kaldırıldı; kenarlara ulaşmak için basılı tutup yeniden konumlama gerekmez.
 - Çok küçük imleç titreşimleri filtrelenir. Mobilde bir noktaya dokunarak hedef verilebilir veya parmak sürüklenebilir. Yön/WASD tuşları çalışır.
 - Sunucu fiziği, hız/ivme sınırları, raket/disk boyutları ve çarpışma hesapları bu sürümde değiştirilmedi. Yalnızca istemci kontrolü ve kontrol metinleri güncellendi.
+
+## Papaz Kimde ve Çiz & Tahmin Et — 2026.10.21.10
+
+Oyun seç ekranında iki ayrı kart bulunur; ikisi de 2–8 kişi içindir.
+
+- **Papaz Kimde:** 48 normal kart ve tek papaz dağıtılır. Aynı değerde çiftler otomatik atılır. Sıradaki oyuncu yanındaki aktif oyuncunun kapalı kartlarından birini seçer. 30 saniyede seçmezse sunucu rastgele çeker. Son papazı elinde tutan kaybeder. Kart dağıtımı ve kapalı kart sırası kriptografik rastgelelikle karıştırılır; diğer oyuncular yalnızca kart sayısını görür.
+- **Çiz & Tahmin Et:** Genel, Ünlü Futbolcular, LoL, Eşyalar, Oyunlar, Hayvanlar, Meslekler, Yiyecekler ve Karışık. LoL havuzu yerel verideki tüm şampiyonları, harita kavramlarını, eşyaları, yaratıkları ve büyüleri içerir. Kişi başına 1–3 çizim, çizim başına 60/90/120 saniye seçilebilir. Herkes eşit sayıda çizer. Çizen kişi üç kelimeden birini seçer; 15 saniyede seçmezse rastgele seçilir.
+- Kalem, silgi, 14 renk, 5 kalınlık, geri al, temizle ve pas bulunur. Çizim fareyle veya dokunmatik ekranda yapılır; çizgiler WebSocket ile eşzamanlı paylaşılır.
+- Tahminler yazılır; Türkçe karakterler ve büyük/küçük harf farkı sorun olmaz. Bilene kalan süreye göre 100–200, çizene her doğru tahmin için 40 puan verilir. Kelime yalnızca çizen kişiye ve doğru bilenlere gönderilir; tur sonunda herkese açılır. 30. ve 60. saniyede en fazla iki harf açılır.
+- Herkes bildiğinde ya da süre dolduğunda 5 saniyelik tur özeti gelir. Maç sonunda en yüksek puan kazanır; eşitlik paylaşılır. Çizen bağlantısını kaybederse 5 saniye yeniden bağlanma payı vardır; herkes ayrılırsa oyun bekler.
+- Her çizim turunda en fazla 7.000 nokta ve 240 çizgi tutulur. Sınır dolarsa geri al veya temizle kullanılabilir.
+
+Bu sürümde sözdizimi ve Cloudflare kuru derlemesi kontrol edildi; yeni oyunlar için çok oyunculu işlev testleri çalıştırılmadı.

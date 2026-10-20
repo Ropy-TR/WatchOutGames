@@ -7,6 +7,8 @@ import { claimDuelSeat } from './duel-lobby.js';
 import { FLEET, createBattleship, beginBattleship, setFleet, randomFleet, shootBattleship, expireBattleship, battleshipPresence, battleshipView, battleshipPrivate } from './battleship.js';
 import { createTrivia, beginTrivia, answerTrivia, expireTrivia, triviaView, triviaMine } from './trivia.js';
 import flagArtwork from './data/flags.json' with { type: 'json' };
+import { createOldMaid, beginOldMaid, drawOldMaid, expireOldMaid, oldMaidPresence, oldMaidView, oldMaidPrivate } from './old-maid.js';
+import { createDrawing, configureDrawing, beginDrawing, chooseDrawingWord, passDrawing, guessDrawing, applyDrawingInk, editDrawing, expireDrawing, drawingPresence, drawingDeadline, drawingView, drawingPrivate } from './drawing.js';
 import { cleanAnswers, finishCity, cityScores, createCodeLobby, beginCode, pickCode, endCodeTurn, secureIndex, advanceXox, expireXox, xoxOutcome } from './game-rules.js';
 import { createSpyMatch, beginSpyVote, resolveSpyVote, beginSpyGuess, submitSpyGuess, nextSpyRound, expireSpy, publicSpy, createCityMatch, cityMatchView, nextCityRound, createXoxSeries, recordXoxResult } from './match-rules.js';
 
@@ -31,6 +33,8 @@ export class Room {
   enqueue(task) { const result = this.queue.then(task); this.queue = result.catch(() => {}); return result; }
   connectedIds() { return new Set([...this.clients].filter(([client]) => client.readyState === 1).map(([, id]) => id)); }
   syncHockey(room) {
+    if(room.game?.kind==='old-maid')oldMaidPresence(room.game,this.connectedIds());
+    if(room.game?.kind==='drawing'){this.drawingRoom=room;drawingPresence(room.game,this.connectedIds());}else this.drawingRoom=null;
     if (room.game?.kind === 'battleship') battleshipPresence(room.game, this.connectedIds());
     if (room.game?.kind === 'hockey') { this.hockeyRoom = room; hockeyPresence(room.game, this.connectedIds()); }
     else this.hockeyRoom = null;
@@ -52,6 +56,7 @@ export class Room {
     }, 33);
   }
   async loadRoom() {
+    if(this.drawingRoom)return this.drawingRoom;
     if (this.hockeyRoom) return this.hockeyRoom;
     const room = await this.storage.get('room');
     if (!room) return room;
@@ -71,6 +76,7 @@ export class Room {
       this.hockeyRoom = room;
       if (room.game.phase === 'playing') { room.game.phase = 'paused'; room.game.pausedAt = Date.now(); }
     }
+    if(room.game?.kind==='drawing')this.drawingRoom=room;
     return room;
   }
   async fetch(request) {
@@ -146,6 +152,30 @@ export class Room {
         await this.save(room); this.broadcast({ type: 'room', room: this.publicRoom(room) }); return;
       }
       if (msg.type === 'stop-game') room.game = null;
+      else if(['start-old-maid','start-drawing'].includes(msg.type)){
+        const kind=msg.type==='start-old-maid'?'old-maid':'drawing';
+        if(game?.kind===kind&&(game.phase!=='results'||msg.gameId!==game.gameId||!game.participants.includes(playerId)))throw new Error('Önce mevcut maçı bitir veya oyun seçimine dön.');
+        room.game=kind==='old-maid'?createOldMaid(active):createDrawing(active);
+      }
+      else if(['begin-old-maid','take-old-maid'].includes(msg.type)&&game?.kind==='old-maid'){
+        if(msg.gameId!==game.gameId)return;
+        if(msg.type==='begin-old-maid')beginOldMaid(game,active);else drawOldMaid(game,playerId,msg);
+      }
+      else if(['configure-drawing','begin-drawing','choose-drawing-word','guess-drawing','pass-drawing','draw-ink','clear-drawing','undo-drawing','drawing-sync'].includes(msg.type)&&game?.kind==='drawing'){
+        if(msg.gameId!==game.gameId)return;
+        if(msg.type==='drawing-sync'){this.sendGame(room,socket);return;}
+        if(msg.type==='configure-drawing')configureDrawing(game,msg);
+        else if(msg.type==='begin-drawing')beginDrawing(game,active);
+        else if(msg.type==='choose-drawing-word')chooseDrawingWord(game,playerId,msg);
+        else if(msg.type==='guess-drawing')guessDrawing(game,playerId,msg,connected);
+        else if(msg.type==='pass-drawing')passDrawing(game,playerId,msg);
+        else if(msg.type==='clear-drawing'||msg.type==='undo-drawing')editDrawing(game,playerId,msg);
+        else if(msg.type==='draw-ink'){
+          const delta=applyDrawingInk(game,playerId,msg);
+          if(delta){this.broadcast(delta);if(Date.now()-(this.lastDrawingWrite||0)>=2000){await this.storage.put('room',room);this.lastDrawingWrite=Date.now();}}
+          return;
+        }
+      }
       else if (['start-battleship','start-quiz','start-flags'].includes(msg.type)) {
         const kind = msg.type === 'start-battleship' ? 'battleship' : msg.type === 'start-flags' ? 'flags' : 'quiz';
         if (game?.kind === kind && (game.phase !== 'results' || msg.gameId !== game.gameId || !(game.participants || game.players).includes(playerId))) throw new Error('Önce mevcut maçı bitir veya oyun seçimine dön.');
@@ -332,13 +362,14 @@ export class Room {
   async save(room) {
     this.syncHockey(room);
     await this.storage.put('room', room);
+    if(room.game?.kind==='drawing')this.lastDrawingWrite=Date.now();
     await this.schedule(room.game);
     await this.publishLobby(room);
     this.sendGame(room);
   }
   async schedule(game) {
     this.hockeyLoop(game);
-    const deadline = (['quiz','flags'].includes(game?.kind) && ['playing','review'].includes(game.phase)) || (game?.kind === 'battleship' && game.phase === 'playing') ? game.deadline : game?.kind === 'tabu' && game.phase === 'playing' ? game.deadline : game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
+    const deadline = game?.kind==='drawing'?drawingDeadline(game):game?.kind==='old-maid'&&game.phase==='playing'?game.deadline:(['quiz','flags'].includes(game?.kind) && ['playing','review'].includes(game.phase)) || (game?.kind === 'battleship' && game.phase === 'playing') ? game.deadline : game?.kind === 'tabu' && game.phase === 'playing' ? game.deadline : game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
     if (deadline && this.storage.setAlarm) await this.storage.setAlarm(deadline);
     else if (this.storage.deleteAlarm) await this.storage.deleteAlarm();
   }
@@ -346,6 +377,8 @@ export class Room {
     const game = room.game;
     if (!game) return;
     let changed = false;
+    if(game.kind==='old-maid')changed=expireOldMaid(game);
+    if(game.kind==='drawing')changed=expireDrawing(game,this.connectedIds());
     if (game.kind === 'battleship') changed = expireBattleship(game);
     if (['quiz','flags'].includes(game.kind)) changed = expireTrivia(game);
     if (game.kind === 'spyfall') changed = expireSpy(game);
@@ -363,11 +396,13 @@ export class Room {
     if (member) { member.online = false; member.disconnectedAt = Date.now(); }
     this.syncHockey(room);
     await this.storage.put('room', room); await this.schedule(room.game); await this.publishLobby(room); this.broadcast({ type: 'room', room: this.publicRoom(room) });
-    if (['hockey','battleship'].includes(room.game?.kind)) this.sendGame(room);
+    if (['hockey','battleship','old-maid','drawing'].includes(room.game?.kind)) this.sendGame(room);
   }); }
   publicRoom(room) { return { players: room.members.map(({ id, nickname, online }) => ({ id, nickname, online })), game: this.publicGame(room.game, room.members) }; }
   publicGame(game, members = []) {
     if (!game) return null;
+    if(game.kind==='old-maid')return oldMaidView(game);
+    if(game.kind==='drawing')return drawingView(game);
     if (game.kind === 'battleship') return battleshipView(game);
     if (['quiz','flags'].includes(game.kind)) return triviaView(game);
     if (game.kind === 'hockey') return hockeyView(game);
@@ -380,8 +415,9 @@ export class Room {
     return null;
   }
   broadcast(msg) { for (const client of this.clients.keys()) if (client.readyState === 1) client.send(JSON.stringify(msg)); }
-  sendGame(room) {
+  sendGame(room,only=null) {
     for (const [client, id] of this.clients) if (client.readyState === 1) {
+      if(only&&client!==only)continue;
       const payload = { type: 'game', game: this.publicGame(room.game, room.members) };
       const game = room.game;
       if (game?.kind === 'codenames' && game.phase !== 'lobby' && game.assignments[id]?.role === 'master') payload.master = game.keys;
@@ -391,6 +427,8 @@ export class Room {
       if (game?.kind === 'tabu') payload.tabuCard = privateTabuCard(game,id);
       if (game?.kind === 'battleship') payload.battleshipMine = battleshipPrivate(game,id);
       if (['quiz','flags'].includes(game?.kind)) payload.triviaMine = triviaMine(game,id);
+      if(game?.kind==='old-maid')payload.oldMaidMine=oldMaidPrivate(game,id);
+      if(game?.kind==='drawing')payload.drawingMine=drawingPrivate(game,id);
       client.send(JSON.stringify(payload));
     }
   }

@@ -7,7 +7,7 @@ for (const file of ['public/app.js', 'public/preferences.js', 'public/style.css'
 for (const file of ['public/hockey.js', 'src/hockey.js']) await access(new URL(file, root));
 for (const file of ['public/modern.css', 'public/icons.svg']) await access(new URL(file, root));
 for (const file of ['public/table-games.js','public/table-games.css','src/battleship.js','src/duel-lobby.js','src/trivia.js','src/trivia-data.js','src/flag-data.js','src/data/flags-source.json','src/data/flags.json','public/flags-LICENSE.txt']) await access(new URL(file,root));
-for (const game of ['battleship','quiz-football','quiz-lol','flags']) if (!html.includes(`data-game="${game}"`)) throw new Error('Yeni oyun kartı eksik: '+game);
+for (const game of ['battleship','quiz-football','quiz-lol','flags','old-maid','drawing']) if (!html.includes(`data-game="${game}"`)) throw new Error('Yeni oyun kartı eksik: '+game);
 if (!html.includes(`/table-games.js?v=${RELEASE}`) || !html.includes(`/table-games.css?v=${RELEASE}`)) throw new Error('Yeni oyun arayüzü dosyaları eksik.');
 if (!html.includes(`/modern.css?v=${RELEASE}`)) throw new Error('Güncel arayüz stil dosyası eksik.');
 if (!html.includes('data-game="hockey"') || !html.includes(`/hockey.js?v=${RELEASE}`)) throw new Error('Hava Hokeyi kartı veya oyun dosyası eksik.');
@@ -28,4 +28,7 @@ if (lol.attributes.some(attribute => !attribute.englishLabel)) throw new Error('
 const { FLAG_COUNTRIES } = await import('../src/flag-data.js');
 const flagArtwork = JSON.parse(await readFile(new URL('src/data/flags.json',root),'utf8'));
 for (const { code } of FLAG_COUNTRIES) if (!flagArtwork[code]?.includes('<svg')) throw new Error('Bayrak görseli eksik: '+code);
-console.log(`WatchOut Games ${RELEASE}: 12 oyun seçeneği, ${FLAG_COUNTRIES.length} yerel bayrak ve veri dosyaları hazır.`);
+console.log(`WatchOut Games ${RELEASE}: 14 oyun seçeneği, ${FLAG_COUNTRIES.length} yerel bayrak ve veri dosyaları hazır.`);
+
+for (const file of ['public/party-games.js','public/party-games.css','src/old-maid.js','src/drawing.js','src/drawing-words.js']) await access(new URL(file,root));
+if (!html.includes('/party-games.js?v='+RELEASE)||!html.includes('/party-games.css?v='+RELEASE)) throw new Error('Yeni parti oyunları arayüzü eksik.');

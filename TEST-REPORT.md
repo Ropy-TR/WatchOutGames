@@ -2,7 +2,15 @@
 
 20 Ekim 2026 — yerel proje, Cloudflare Wrangler çalışma ortamı.
 
-## Sonuç
+## 2026.10.21.10 — Papaz Kimde ve çizim oyunu
+
+- Yeni modüllerde Node sözdizimi kontrolü başarılı.
+- Cloudflare Wrangler kuru derlemesi başarılı; 14 oyun seçeneği ve 12 statik dosya. Sıkıştırılmış Worker yaklaşık 1.69 MiB.
+- Yeni oyunlar için otomatik test eklenmedi veya çalıştırılmadı; aşağıdaki eski test sonuçları bu iki oyunu kapsamaz.
+- Örnek oyun durumlarıyla 1280 px masaüstü ve 390 px mobil görünüm görsel olarak incelendi. Gerçek çok oyunculu oynanış testi yapılmadı.
+- Bu paket canlı siteye dağıtılmadı.
+
+## Önceki sürümlerin sonuçları
 
 - `npm test`: **104 test başarılı, 0 başarısız** (21 Ekim güncellemesi).
 - `test/browser-games.mjs`: kurulu Chrome ve dört bağımsız tarayıcı oturumuyla tüm senaryolar başarılı; gerçek WebSocket bağlantıları kullanıldı. Tarayıcı JavaScript hatası görülmedi. 390 px mobil ekranda yatay taşma kontrolü geçti.

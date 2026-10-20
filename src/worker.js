@@ -28,10 +28,10 @@ export default {
       const response = json({ countries: flagCountryCatalog() }); response.headers.set('cache-control','public, max-age=3600'); return response;
     }
     if (url.pathname === '/api/version' && request.method === 'GET') {
-      const response = json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey', 'battleship', 'quiz-football', 'quiz-lol', 'flags'] });
+      const response = json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey', 'battleship', 'quiz-football', 'quiz-lol', 'flags', 'old-maid', 'drawing'] });
       response.headers.set('cache-control', 'no-store'); return response;
     }
-    if (url.pathname === '/api/games' && request.method === 'GET') return json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey', 'battleship', 'quiz-football', 'quiz-lol', 'flags'], spyCategories: Object.keys(SPY_CATEGORIES), whoamiCategories: Object.keys(WHO_CATEGORIES) });
+    if (url.pathname === '/api/games' && request.method === 'GET') return json({ release: RELEASE, games: ['spy', 'code', 'city', 'xox', 'lol', 'whoami', 'tabu', 'hockey', 'battleship', 'quiz-football', 'quiz-lol', 'flags', 'old-maid', 'drawing'], spyCategories: Object.keys(SPY_CATEGORIES), whoamiCategories: Object.keys(WHO_CATEGORIES) });
     if (url.pathname === '/api/lol' && request.method === 'GET') return new Response(lolCatalogBody, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' } });
     if (url.pathname === '/api/lol/search' && request.method === 'GET') {
       const response = json({ players: searchLolChampions(url.searchParams.get('q')) });
