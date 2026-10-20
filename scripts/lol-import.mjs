@@ -73,9 +73,9 @@ export function buildLolSnapshot({ riot, lua, pages, redirects = [], fetchedAt, 
   const pageMap = new Map(pages.map((page) => [page.title, page]));
   const redirectMap = new Map(redirects.map(({ from, to }) => [from, to]));
   const definitions = new Map();
-  const attribute = (type, key, label) => {
+  const attribute = (type, key, label, englishLabel = key) => {
     const id = type + ':' + slug(key);
-    definitions.set(id, { id, type, label }); return id;
+    definitions.set(id, { id, type, label, englishLabel }); return id;
   };
   const champions = Object.values(riot.data).map((champion) => {
     const entry = records.get(champion.key);
@@ -95,8 +95,8 @@ export function buildLolSnapshot({ riot, lua, pages, redirects = [], fetchedAt, 
     const species = [...new Set(bios.flatMap(({ bio }) => wikiSpecies(bio.species)))];
     if (!regions.length || !species.length) throw new Error('Unmapped wiki fields: ' + champion.id);
     const attributes = [
-      ...regions.map((name) => attribute('region', REGION_LABELS[name], REGION_LABELS[name])),
-      ...origins.map((name) => attribute('origin', REGION_LABELS[name], REGION_LABELS[name])),
+      ...regions.map((name) => attribute('region', REGION_LABELS[name], REGION_LABELS[name], name === 'The Void' ? 'Void' : name === 'Mount Targon' ? 'Targon' : name)),
+      ...origins.map((name) => attribute('origin', REGION_LABELS[name], REGION_LABELS[name], name === 'The Void' ? 'Void' : name === 'Mount Targon' ? 'Targon' : name)),
       ...species.map((name) => attribute('species', name, SPECIES_LABELS[name])),
       ...entry.positions.map((lane) => { if (!LANE_LABELS[lane]) throw new Error('Unknown lane ' + lane); return attribute('lane', lane, LANE_LABELS[lane]); }),
       ...champion.tags.map((name) => { if (!CLASS_LABELS[name]) throw new Error('Unknown class ' + name); return attribute('class', name, CLASS_LABELS[name]); })

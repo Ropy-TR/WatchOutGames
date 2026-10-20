@@ -3,6 +3,10 @@ import { createLolBoard, lolDataVersion, validateLolPick, hasAvailableLolMove } 
 import { createWhoami, whoamiView, whoamiCards, advanceWhoami, guessWhoami } from './whoami.js';
 import { createTabuLobby, joinTabuTeam, beginTabu, startTabuTurn, nextTabuTurn, claimTabuRole, tabuAction, expireTabu, tabuView, privateTabuCard } from './tabu.js';
 import { createHockey, joinHockey, beginHockey, hockeyPresence, hockeyInput, advanceHockey, hockeyView } from './hockey.js';
+import { claimDuelSeat } from './duel-lobby.js';
+import { FLEET, createBattleship, beginBattleship, setFleet, randomFleet, shootBattleship, expireBattleship, battleshipPresence, battleshipView, battleshipPrivate } from './battleship.js';
+import { createTrivia, beginTrivia, answerTrivia, expireTrivia, triviaView, triviaMine } from './trivia.js';
+import flagArtwork from './data/flags.json' with { type: 'json' };
 import { cleanAnswers, finishCity, cityScores, createCodeLobby, beginCode, pickCode, endCodeTurn, secureIndex, advanceXox, expireXox, xoxOutcome } from './game-rules.js';
 import { createSpyMatch, beginSpyVote, resolveSpyVote, beginSpyGuess, submitSpyGuess, nextSpyRound, expireSpy, publicSpy, createCityMatch, cityMatchView, nextCityRound, createXoxSeries, recordXoxResult } from './match-rules.js';
 
@@ -15,7 +19,7 @@ export class Room {
     if (!this.env.LOBBIES || !room.code) return;
     const online = new Set([...this.clients].filter(([socket]) => socket.readyState === 1).map(([, id]) => id));
     const occupied = room.members.filter(m => online.has(m.id) || m.disconnectedAt > Date.now() - 15 * 60000).length;
-    const entry = { code: room.code, visible: room.listed === true, playerCount: online.size, full: occupied >= 8, game: room.game?.kind || '' };
+    const entry = { code: room.code, visible: room.listed === true, playerCount: online.size, full: occupied >= 8, game: room.game?.kind === 'quiz' ? 'quiz-' + room.game.category : room.game?.kind || '' };
     const serialized = JSON.stringify(entry);
     if (serialized === this.lastListing && Date.now() - this.listedAt < 25000) return;
     try {
@@ -27,6 +31,7 @@ export class Room {
   enqueue(task) { const result = this.queue.then(task); this.queue = result.catch(() => {}); return result; }
   connectedIds() { return new Set([...this.clients].filter(([client]) => client.readyState === 1).map(([, id]) => id)); }
   syncHockey(room) {
+    if (room.game?.kind === 'battleship') battleshipPresence(room.game, this.connectedIds());
     if (room.game?.kind === 'hockey') { this.hockeyRoom = room; hockeyPresence(room.game, this.connectedIds()); }
     else this.hockeyRoom = null;
   }
@@ -65,6 +70,14 @@ export class Room {
   }
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname.endsWith('/flag') && request.method === 'GET') {
+      const room = await this.loadRoom(), game = room?.game;
+      if (game?.kind !== 'flags' || game.gameId !== url.searchParams.get('game') || game.roundId !== url.searchParams.get('round')) return new Response('Not found', { status: 404 });
+      const code = game.deck[game.round - 1]?.flagCode;
+      if (!/^[a-z]{2}$/.test(code || '') || !flagArtwork[code]) return new Response('Not found', { status: 404 });
+      const response = new Response(flagArtwork[code], { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
+      return response;
+    }
     if (url.pathname === '/init' && request.method === 'POST') {
       const body = await request.json();
       if (!body.password || String(body.password).length > 32) return json({ error: 'Şifre 1–32 karakter olmalı.' }, 400);
@@ -124,9 +137,43 @@ export class Room {
         for (const [client, id] of this.clients) if (id === playerId) this.clients.delete(client);
         if (game?.phase === 'lobby' && game.assignments) delete game.assignments[playerId];
         if (game?.kind === 'hockey' && game.phase === 'lobby') game.players = game.players.map(id => id === playerId ? null : id);
+        if (['battleship','quiz'].includes(game?.kind) && game.phase === 'lobby') game.players = game.players.map(id => id === playerId ? null : id);
         await this.save(room); this.broadcast({ type: 'room', room: this.publicRoom(room) }); return;
       }
       if (msg.type === 'stop-game') room.game = null;
+      else if (['start-battleship','start-quiz','start-flags'].includes(msg.type)) {
+        const kind = msg.type === 'start-battleship' ? 'battleship' : msg.type === 'start-flags' ? 'flags' : 'quiz';
+        if (game?.kind === kind && (game.phase !== 'results' || msg.gameId !== game.gameId || !(game.participants || game.players).includes(playerId))) throw new Error('Önce mevcut maçı bitir veya oyun seçimine dön.');
+        room.game = kind === 'battleship' ? createBattleship(active, playerId) : createTrivia(active, playerId, kind === 'flags' ? 'flags' : msg.category);
+      }
+      else if (msg.type === 'claim-duel-seat' && ['battleship','quiz'].includes(game?.kind)) {
+        if (msg.gameId !== game.gameId) return;
+        claimDuelSeat(game, playerId, msg.side, connected, active);
+      }
+      else if (['begin-battleship','place-ship','undo-ship','clear-fleet','random-fleet','ready-fleet','shoot-battleship'].includes(msg.type) && game?.kind === 'battleship') {
+        if (msg.gameId !== game.gameId) return;
+        if (msg.type === 'begin-battleship') beginBattleship(game, playerId, connected);
+        else if (msg.type === 'shoot-battleship') shootBattleship(game, playerId, msg);
+        else {
+          if (game.phase !== 'preparing' || !game.players.includes(playerId) || game.ready.includes(playerId)) throw new Error('Bu filo artık değiştirilemez.');
+          const fleet = game.fleets[playerId] || [];
+          let next = fleet;
+          if (msg.type === 'place-ship') {
+            if (!Number.isInteger(msg.cell) || msg.cell < 0 || msg.cell >= 100 || !['horizontal','vertical'].includes(msg.direction) || fleet.length >= FLEET.length) throw new Error('Geçersiz yerleştirme.');
+            const step = msg.direction === 'horizontal' ? 1 : 10;
+            next = [...fleet, Array.from({ length: FLEET[fleet.length] }, (_, index) => msg.cell + index * step)];
+          }
+          if (msg.type === 'random-fleet') next = randomFleet();
+          if (msg.type === 'undo-ship') next = fleet.slice(0, -1);
+          if (msg.type === 'clear-fleet') next = [];
+          setFleet(game, playerId, next, msg.type === 'ready-fleet');
+        }
+      }
+      else if (['begin-trivia','answer-trivia'].includes(msg.type) && ['quiz','flags'].includes(game?.kind)) {
+        if (msg.gameId !== game.gameId) return;
+        if (msg.type === 'begin-trivia') beginTrivia(game, playerId, connected, active);
+        else answerTrivia(game, playerId, msg);
+      }
       else if (msg.type === 'start-hockey') {
         if (game?.kind === 'hockey' && game.phase !== 'finished') throw new Error('Önce mevcut maçı bitir veya oyun seçimine dön.');
         if (game?.kind === 'hockey' && (msg.gameId !== game.gameId || !game.players.includes(playerId))) throw new Error('Yeni maçı oyunculardan biri açabilir.');
@@ -286,7 +333,7 @@ export class Room {
   }
   async schedule(game) {
     this.hockeyLoop(game);
-    const deadline = game?.kind === 'tabu' && game.phase === 'playing' ? game.deadline : game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
+    const deadline = (['quiz','flags'].includes(game?.kind) && ['playing','review'].includes(game.phase)) || (game?.kind === 'battleship' && game.phase === 'playing') ? game.deadline : game?.kind === 'tabu' && game.phase === 'playing' ? game.deadline : game?.kind === 'spyfall' ? (game.phase === 'playing' ? game.startedAt + game.duration * 1000 : game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : null) : game?.kind === 'city' && game.phase === 'playing' ? game.startedAt + game.duration * 1000 : isXox(game) && !game.winner && this.clients.size > 0 ? game.deadline : null;
     if (deadline && this.storage.setAlarm) await this.storage.setAlarm(deadline);
     else if (this.storage.deleteAlarm) await this.storage.deleteAlarm();
   }
@@ -294,6 +341,8 @@ export class Room {
     const game = room.game;
     if (!game) return;
     let changed = false;
+    if (game.kind === 'battleship') changed = expireBattleship(game);
+    if (['quiz','flags'].includes(game.kind)) changed = expireTrivia(game);
     if (game.kind === 'spyfall') changed = expireSpy(game);
     if (game.kind === 'tabu') changed = expireTabu(game);
     if (game.kind === 'city' && game.phase === 'playing' && Date.now() >= game.startedAt + game.duration * 1000) { finishCity(game); changed = true; }
@@ -309,11 +358,13 @@ export class Room {
     if (member) { member.online = false; member.disconnectedAt = Date.now(); }
     this.syncHockey(room);
     await this.storage.put('room', room); await this.schedule(room.game); await this.publishLobby(room); this.broadcast({ type: 'room', room: this.publicRoom(room) });
-    if (room.game?.kind === 'hockey') this.sendGame(room);
+    if (['hockey','battleship'].includes(room.game?.kind)) this.sendGame(room);
   }); }
   publicRoom(room) { return { players: room.members.map(({ id, nickname, online }) => ({ id, nickname, online })), game: this.publicGame(room.game, room.members) }; }
   publicGame(game, members = []) {
     if (!game) return null;
+    if (game.kind === 'battleship') return battleshipView(game);
+    if (['quiz','flags'].includes(game.kind)) return triviaView(game);
     if (game.kind === 'hockey') return hockeyView(game);
     if (game.kind === 'tabu') return tabuView(game,members);
     if (game.kind === 'whoami') return whoamiView(game);
@@ -333,6 +384,8 @@ export class Room {
       if (game?.kind === 'spyfall') payload.role = game.roles[id] || null;
       if (game?.kind === 'whoami') payload.identityCards = whoamiCards(game, id);
       if (game?.kind === 'tabu') payload.tabuCard = privateTabuCard(game,id);
+      if (game?.kind === 'battleship') payload.battleshipMine = battleshipPrivate(game,id);
+      if (['quiz','flags'].includes(game?.kind)) payload.triviaMine = triviaMine(game,id);
       client.send(JSON.stringify(payload));
     }
   }

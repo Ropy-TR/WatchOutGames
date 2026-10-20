@@ -103,3 +103,26 @@ LoL XOX ve Futbol XOX menünün ilk iki ayrı kartıdır. Sürümlü JS/CSS bağ
 - Hava Hokeyi menüye ve oyun API'lerine eklendi. İki oyuncu, izleyiciler, taraf seçimi, 10 golle bitiş, sunucu fiziği ve bağlantı kopunca duraklatma uygulandı.
 - Önceki sürümün 104 test sonucu bu oyunu kapsamıyor. Bu değişiklik için yeni otomatik test veya tarayıcı oyun testi çalıştırılmadı. JavaScript sözdizimi ve dağıtım paketi derlemesi kontrol edildi.
 - Yerel dry-run, veri dosyalarını yeniden indirmeyen geçici yapılandırmayla yapıldı. Üretimde mevcut veri güncelleme komutu korunuyor. Canlıya yayın yapılmadı.
+
+## Sürüm 2026.10.21.5 — LoL İngilizce adlar ve hokey dengesi
+
+- LoL veri dosyasındaki 74 özellik mevcut kaynak çeviri eşleştirmelerinden İngilizce adlarla zenginleştirildi; şampiyonlar, üyelikler ve kaynak tarihleri değiştirilmedi. Güncelleme betiği gelecekte de İngilizce adları kaydeder.
+- Hokey kontrolü göreli sürüklemeye alındı; hız, hızlanma, servis ve vuruş aktarımı yumuşatıldı. İstemci raket tahmini kaldırıldı; görünür kenarlar sunucudaki yarıçaplarla eşlendi ve fizik alt adımı sıklaştırıldı.
+- Bu sürümde yeni otomatik test veya tarayıcı oyun testi çalıştırılmadı. Sözdizimi ve paket derlemesi kontrol edildi; oynanış hissi gerçek oyuncularla değerlendirilmedi. Önceki sürüm test sonuçları yeni hokey dengesini kapsamıyor.
+- Dry-run yerel geçici yapılandırmayla veri yenilemeden yapıldı; üretimdeki veri güncelleme komutu korunuyor. Canlıya yayın yapılmadı.
+
+## Sürüm 2026.10.21.6 — XOX renk ayrımı ve modern görünüm
+
+- Sabit X=sarı, O=mavi eşlemesi kaldırıldı. İki XOX'te kişisel takım kimliğinden ana/karşıt renkler üretilir; hücreler ve takım etiketleri aynı değişkenleri kullanır. Yakın nötr tonlarda ayrıştırıcı alternatif vardır.
+- Tasarım önizlemeleri 1440 px masaüstü ve 390 px mobilde incelendi: giriş, oyun menüsü ve örnek XOX renk yerleşimi. Mavi tercihli O takımının mavi, X rakibin sarı gösterildiği örnek yerleşim incelendi. Önizlemedeki isimler/hamleler temsilidir; gerçek bir maç kaydı değildir.
+- Yeni otomatik test veya gerçek çok oyunculu maç testi çalıştırılmadı. Önceki 104 test sonucu bu sürüm için yeniden çalıştırılmadı. JavaScript sözdizimi ve dağıtım derlemesi kontrol edildi.
+- Dry-run yerel geçici yapılandırmayla veri yenilemeden yapıldı. Üretimdeki veri güncelleme komutu korunuyor. Canlıya yayın yapılmadı.
+
+## Sürüm 2026.10.21.7 — Amiral Battı, bilgi düelloları, Bayrak Yarışı
+
+- Menü/API oyun listesi 12 seçeneğe çıktı: yeni Amiral Battı, Futbol Bilgi Düellosu, LoL Bilgi Düellosu ve Bayrak Yarışı kartları eklendi.
+- Amiral Battı için özel filo mesajları, sunucu yerleştirme/atış doğrulaması, 30 saniye, sıra, batırma, üç ardışık zaman aşımı ve bağlantıda duraklatma uygulandı. Quiz/bayrakta ortak soru, kilitli cevap, gizli cevap anahtarı, sunucu süre/puanı, otomatik tur ve final sonuçları uygulandı.
+- 121 bayrak SVG'si flag-icons MIT kaynağından sabit Git revizyonuyla indirildi ve tek JSON verisine paketlendi. Kaynak ve lisans paket içinde. Tekil ara SVG dosyaları .cache altında arşivlendi; dağıtım dosyalarına dahil değil.
+- JavaScript sözdizimi ve Cloudflare dry-run derlemesi başarılı. Dry-run yerel geçici yapılandırmayla veri yenilemeden yapıldı; üretimde mevcut otomatik futbol/LoL veri güncellemesi korunuyor.
+- Örnek durumlarla masaüstü/mobil filo yerleştirme, atış tahtası, LoL soru, bayrak soru ve menü önizlemeleri incelendi. Önizlemedeki hamle/puan/soru verileri temsilidir; gerçek çok oyunculu maç doğrulaması değildir.
+- Bu sürüm için yeni otomatik test veya gerçek WebSocket oyun testi çalıştırılmadı. Önceki sürümlerin test sayıları bu dört yeni oyunu kapsamıyor. Canlıya yayın yapılmadı.

@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="tr" data-release="2026.10.21.4">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#090909"><title>WatchOut Games</title><link rel="stylesheet" href="/style.css?v=2026.10.21.4"></head>
+<html lang="tr" data-release="2026.10.21.7">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#090909"><title>WatchOut Games</title><link rel="stylesheet" href="/style.css?v=2026.10.21.7"><link rel="stylesheet" href="/modern.css?v=2026.10.21.7"><link rel="stylesheet" href="/table-games.css?v=2026.10.21.7"></head>
 <body>
   <header class="topbar"><a class="brand" href="/">WatchOut<span>Games</span></a><div class="preferences"><label class="color-setting">Renk<input id="accentColor" type="color" value="#f2cf43" aria-label="Tema rengi"></label><button id="turnSound" class="subtle-button" type="button" aria-pressed="true">Ses açık</button></div></header>
   <main>
     <section id="landing" class="landing">
-      <h1>WatchOut Games</h1>
+      <div class="landing-intro"><p class="eyebrow">WATCHOUT GAMES</p><h1>Oyun gecesi<br><em>başlasın.</em></h1><div class="night-art" aria-hidden="true"><div class="art-orbit"></div><div class="art-tile art-x">X</div><div class="art-tile art-o">O</div><div class="art-tile art-question">?</div><span class="art-dot dot-one"></span><span class="art-dot dot-two"></span></div></div>
       <div class="room-card">
         <div class="tab-row"><button class="tab active" data-tab="join">Katıl</button><button class="tab" data-tab="create">Oda oluştur</button><button class="tab" data-tab="browse">Açık lobiler</button></div>
         <section id="lobbyBrowser" class="hidden" aria-label="Açık lobiler"><div class="lobby-toolbar"><h2>Açık lobiler</h2><button id="refreshLobbies" class="subtle-button" type="button">Yenile</button></div><div id="lobbyList" aria-live="polite"></div></section>
@@ -29,13 +29,24 @@
         <aside class="room-sidebar"><div class="sidebar-title"><h2>Oyuncular</h2><span id="playerCount">0 / 8</span></div><div id="playerList" class="player-list"></div></aside>
         <section class="room-main"><div id="roomNotice" class="notice hidden"></div>
           <div id="gamePicker" class="game-picker"><h1>Oyun seç</h1><div class="picker-grid">
-            <button class="picker-card" data-game="xox">Futbol XOX</button><button class="picker-card" data-game="lol">LoL XOX</button><button class="picker-card" data-game="spy">Spyfall</button><button class="picker-card" data-game="code">Codenames</button><button class="picker-card" data-game="city">İsim Şehir</button><button class="picker-card" data-game="whoami">Kimim Ben?</button><button class="picker-card" data-game="tabu">Tabu</button><button class="picker-card" data-game="hockey">Hava Hokeyi</button>
+            <button class="picker-card" data-game="xox"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#football"/></svg></span><span class="game-name">Futbol XOX</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="lol"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#lol"/></svg></span><span class="game-name">LoL XOX</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="spy"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#spy"/></svg></span><span class="game-name">Spyfall</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="code"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#cards"/></svg></span><span class="game-name">Codenames</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="city"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#city"/></svg></span><span class="game-name">İsim Şehir</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="whoami"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#who"/></svg></span><span class="game-name">Kimim Ben?</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="tabu"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#tabu"/></svg></span><span class="game-name">Tabu</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="hockey"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#hockey"/></svg></span><span class="game-name">Hava Hokeyi</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="battleship"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#ship"/></svg></span><span class="game-name">Amiral Battı</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="quiz-football"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#football"/></svg></span><span class="game-name">Futbol Bilgi Düellosu</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="quiz-lol"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#lol"/></svg></span><span class="game-name">LoL Bilgi Düellosu</span><span class="card-arrow" aria-hidden="true">↗</span></button>
+            <button class="picker-card" data-game="flags"><span class="game-icon"><svg aria-hidden="true"><use href="/icons.svg#flag"/></svg></span><span class="game-name">Bayrak Yarışı</span><span class="card-arrow" aria-hidden="true">↗</span></button>
           </div></div><div id="activeGame" class="active-game hidden"></div>
         </section>
       </div>
     </section>
   </main>
   <dialog id="playerDialog"><form id="playerSearchForm"><div class="game-title-row"><h2>Futbolcu seç</h2><button type="button" class="subtle-button" id="closePlayerDialog">Kapat</button></div><input id="playerSearch" type="search" placeholder="Futbolcu ara" autocomplete="off" aria-label="Futbolcu ara"><div id="playerResults" class="player-results"></div></form></dialog>
-  <div id="toast" class="toast" role="status"></div><script src="/preferences.js?v=2026.10.21.4"></script><script src="/hockey.js?v=2026.10.21.4"></script><script src="/app.js?v=2026.10.21.4"></script>
+  <div id="toast" class="toast" role="status"></div><script src="/preferences.js?v=2026.10.21.7"></script><script src="/hockey.js?v=2026.10.21.7"></script><script src="/table-games.js?v=2026.10.21.7"></script><script src="/app.js?v=2026.10.21.7"></script>
 </body>
 </html>

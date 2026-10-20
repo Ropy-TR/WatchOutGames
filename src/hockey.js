@@ -1,6 +1,6 @@
 import { secureIndex } from './game-rules.js';
 
-export const HOCKEY = Object.freeze({ width: 480, height: 760, paddle: 28, puck: 12, goal: 180, target: 10, paddleSpeed: 1400, puckSpeed: 1150 });
+export const HOCKEY = Object.freeze({ width: 480, height: 760, paddle: 30, puck: 11, goal: 180, target: 10, paddleSpeed: 620, paddleAcceleration: 4200, paddleResponse: 12, controlGain: .78, keyboardSpeed: 440, puckSpeed: 820 });
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 function paddle(side) { return { x: 240, y: side === 0 ? 625 : 135, vx: 0, vy: 0, targetX: 240, targetY: side === 0 ? 625 : 135, inputSeq: 0 }; }
 
@@ -19,7 +19,7 @@ export function joinHockey(game, id, side, connected, members) {
 function serve(game, toward, now) {
   game.paddles = [paddle(0), paddle(1)];
   const angle = (secureIndex(81) - 40) * Math.PI / 180;
-  game.puck = { x: 240, y: 380, vx: Math.sin(angle) * 360, vy: (toward === 0 ? 1 : -1) * Math.cos(angle) * 360 };
+  game.puck = { x: 240, y: 380, vx: Math.sin(angle) * 290, vy: (toward === 0 ? 1 : -1) * Math.cos(angle) * 290 };
   game.serveUntil = now + 1600;
 }
 export function beginHockey(game, id, connected, now = Date.now()) {
@@ -49,24 +49,38 @@ export function hockeyInput(game, id, msg) {
   p.targetX = clamp(msg.x, margin, HOCKEY.width - margin);
   p.targetY = clamp(msg.y, side === 0 ? 380 + margin : margin, side === 0 ? 760 - margin : 380 - margin);
 }
-function discCollision(puck, x, y, radius, vx = 0, vy = 0) {
+function discCollision(puck, x, y, radius, vx = 0, vy = 0, movingPaddle = false) {
   const dx = puck.x - x, dy = puck.y - y, distance = Math.hypot(dx, dy), separation = HOCKEY.puck + radius;
   if (distance >= separation) return;
   const nx = distance > .001 ? dx / distance : 0, ny = distance > .001 ? dy / distance : (puck.y >= 380 ? -1 : 1);
   puck.x = x + nx * (separation + .05); puck.y = y + ny * (separation + .05);
-  const relative = (puck.vx - vx) * nx + (puck.vy - vy) * ny;
-  if (relative < 0) { puck.vx -= 1.96 * relative * nx; puck.vy -= 1.96 * relative * ny; }
+  const transfer = movingPaddle ? .65 : 1;
+  const relative = (puck.vx - vx * transfer) * nx + (puck.vy - vy * transfer) * ny;
+  if (relative < 0) { const impulse = (movingPaddle ? 1.88 : 1.94) * relative; puck.vx -= impulse * nx; puck.vy -= impulse * ny; }
+}
+function movePaddle(p, side, dt) {
+  const dx = p.targetX - p.x, dy = p.targetY - p.y, distance = Math.hypot(dx, dy);
+  const speed = Math.min(HOCKEY.paddleSpeed, distance * HOCKEY.paddleResponse, Math.sqrt(2 * HOCKEY.paddleAcceleration * distance));
+  const desiredX = distance > .001 ? dx / distance * speed : 0, desiredY = distance > .001 ? dy / distance * speed : 0;
+  const changeX = desiredX - p.vx, changeY = desiredY - p.vy, change = Math.hypot(changeX, changeY);
+  const blend = change ? Math.min(1, HOCKEY.paddleAcceleration * dt / change) : 0;
+  p.vx += changeX * blend; p.vy += changeY * blend;
+  const stepX = p.vx * dt, stepY = p.vy * dt;
+  if (Math.hypot(stepX, stepY) >= distance && stepX * dx + stepY * dy >= 0) { p.x = p.targetX; p.y = p.targetY; p.vx = p.vy = 0; }
+  else { p.x += stepX; p.y += stepY; }
+  const margin = HOCKEY.paddle + 6;
+  const x = clamp(p.x, margin, 480 - margin), y = clamp(p.y, side === 0 ? 380 + margin : margin, side === 0 ? 760 - margin : 380 - margin);
+  if (x !== p.x) p.vx = 0;
+  if (y !== p.y) p.vy = 0;
+  p.x = x; p.y = y;
 }
 function step(game, dt, now) {
-  const { width: w, height: h, puck: r, goal, paddleSpeed, puckSpeed } = HOCKEY;
+  const { width: w, height: h, puck: r, goal, puckSpeed } = HOCKEY;
   const puck = game.puck, left = (w - goal) / 2, right = w - left;
-  for (const p of game.paddles) {
-    const dx = p.targetX - p.x, dy = p.targetY - p.y, distance = Math.hypot(dx, dy), ratio = distance ? Math.min(1, paddleSpeed * dt / distance) : 0;
-    p.vx = dx * ratio / dt; p.vy = dy * ratio / dt; p.x += dx * ratio; p.y += dy * ratio;
-  }
+  game.paddles.forEach((p, side) => movePaddle(p, side, dt));
   if (now < game.serveUntil) return;
   puck.x += puck.vx * dt; puck.y += puck.vy * dt;
-  for (const p of game.paddles) discCollision(puck, p.x, p.y, HOCKEY.paddle, p.vx, p.vy);
+  for (const p of game.paddles) discCollision(puck, p.x, p.y, HOCKEY.paddle, p.vx, p.vy, true);
   // Rounded posts also stop diagonal shots clipping through the goal edges.
   for (const x of [left, right]) for (const y of [0, h]) discCollision(puck, x, y, 7);
   if (puck.x < r) { puck.x = r; puck.vx = Math.abs(puck.vx) * .995; }
@@ -84,8 +98,12 @@ function step(game, dt, now) {
   const speed = Math.hypot(puck.vx, puck.vy);
   if (speed > puckSpeed) { puck.vx *= puckSpeed / speed; puck.vy *= puckSpeed / speed; }
   // Air cushion: retain momentum, but unstick a nearly stationary puck fairly.
-  puck.vx *= Math.exp(-.035 * dt); puck.vy *= Math.exp(-.035 * dt);
-  if (speed < 80) { const factor = speed > .01 ? 100 / speed : 0; puck.vx *= factor; puck.vy = speed > .01 ? puck.vy * factor : (secureIndex(2) ? 100 : -100); }
+  puck.vx *= Math.exp(-.08 * dt); puck.vy *= Math.exp(-.08 * dt);
+  // No artificial kick on gentle contact. Only release a puck that has stopped for a full second.
+  if (speed < 15) {
+    game.stillFor = (game.stillFor || 0) + dt;
+    if (game.stillFor >= 1) { const angle = secureIndex(360) * Math.PI / 180; puck.vx = Math.cos(angle) * 70; puck.vy = Math.sin(angle) * 70; game.stillFor = 0; }
+  } else game.stillFor = 0;
 }
 export function advanceHockey(game, now = Date.now()) {
   if (game.phase !== 'playing') { game.lastTick = now; return false; }
@@ -93,7 +111,7 @@ export function advanceHockey(game, now = Date.now()) {
   let elapsed = Math.min(.1, Math.max(0, (now - game.lastTick) / 1000));
   game.lastTick = now;
   const score = game.scores[0] + game.scores[1];
-  while (elapsed > .000001 && game.phase === 'playing') { const dt = Math.min(elapsed, 1 / 120); step(game, dt, now); elapsed -= dt; }
+  while (elapsed > .000001 && game.phase === 'playing') { const dt = Math.min(elapsed, 1 / 240); step(game, dt, now); elapsed -= dt; }
   game.tick++;
   return game.scores[0] + game.scores[1] !== score;
 }

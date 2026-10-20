@@ -4,18 +4,29 @@
   const picker = document.querySelector('#accentColor');
   const toggle = document.querySelector('#turnSound');
   const luminance = rgb => rgb.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+  function readableColor(rgb) {
+    let result = rgb.slice();
+    for (let amount = 0; luminance(result) < .27 && amount <= 1; amount += .025) result = rgb.map(v => Math.round(v + (255 - v) * amount));
+    return result;
+  }
   function applyColor(value) {
     if (!/^#[0-9a-f]{6}$/i.test(value)) value = '#f2cf43';
     const rgb = value.slice(1).match(/../g).map(v => parseInt(v, 16));
     const light = luminance(rgb);
     const ink = (light + .05) / .05 >= 1.05 / (light + .05) ? '#000000' : '#ffffff';
     // Keep text legible on the black panels even when the selected accent is dark.
-    let readable = rgb.slice();
-    for (let amount = 0; luminance(readable) < .27 && amount <= 1; amount += .025) readable = rgb.map(v => Math.round(v + (255 - v) * amount));
+    const readable = readableColor(rgb);
+    let inverse = rgb.map(v => 255 - v), opponent = readableColor(inverse);
+    // Mid-grey is almost its own inverse. Keep the two teams visibly different there too.
+    if (Math.hypot(...readable.map((value, i) => value - opponent[i])) < 110) {
+      inverse = [113, 181, 255]; opponent = readableColor(inverse);
+    }
     const style = document.documentElement.style;
     style.setProperty('--accent', value);
     style.setProperty('--accent-ink', ink);
     style.setProperty('--yellow', `rgb(${readable.join(',')})`);
+    style.setProperty('--opponent', `rgb(${opponent.join(',')})`);
+    style.setProperty('--opponent-accent', `rgb(${inverse.join(',')})`);
     picker.value = value;
     write('wg-accent', value);
   }

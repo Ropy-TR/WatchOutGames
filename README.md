@@ -4,7 +4,7 @@ Oda kodu ve şifresiyle oynanan mini oyun sitesi. Arayüz Cloudflare Workers sta
 
 ## Kurulum yapmadan GitHub ile yayınlama
 
-Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.4` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.4` ve oyun listesinde `hockey` döndürmeli.
+Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.21.7` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.21.7` ve oyun listesinde `hockey` döndürmeli.
 
 ## Yerelde çalıştırma
 
@@ -149,3 +149,42 @@ Her anlatım 60 saniyedir. Doğru +1, tabu −1; üç pas ücretsizdir, dördün
 - Disk fiziği, raket hız sınırı ve skor sunucuda hesaplanır. İstemci yalnızca kendi raketinin hedefini gönderir; gol veya disk konumu gönderemez.
 - Oyunculardan biri koparsa maç duraklar, aynı oturumla döndüğünde skor korunarak devam eder. Odadan bilerek çıkmak oturum anahtarını siler; yeni maç için oyun seçimine dönülür.
 - Gerçek zamanlı hareket WebSocket ile aktarılır. Yüksek bağlantı gecikmesi oynanışı etkileyebilir. Yeni binding veya migration gerekmez; mevcut Room kullanılır.
+
+## LoL çift dil ve hokey dengesi — 2026.10.21.5
+
+- Yalnızca LoL XOX'te her özellik başlığında Türkçenin altında parantez içinde kaynak İngilizce adı gösterilir: Suret Taşıyıcısı (Aspect Host), Yükselmiş (Ascended), Hiçlik Yaratığı (Voidborn), vb. Bölge/köken/koridor/sınıf adları da aynı biçimdedir. Mevcut 74 özelliğe kaynak adları eklendi; veri yenileme betiği de İngilizce adları korur. Kaynakların indirilme tarihleri değiştirilmedi.
+- Hokeyde kontrol basılı tutup sürükleme şeklindedir. Ekrana dokununca raket aniden imlece sıçramaz; hareket mesafesi %78 oranıyla aktarılır. Yön/WASD tuşları da çalışır; çapraz hareket hız avantajı sağlamaz.
+- Raket azami hızı 1.400 → 620 birim/sn, disk azami hızı 1.150 → 820, servis hızı 360 → 290 olarak ayarlandı. Raket hızlanması ve duruşu kademelidir; vuruşta raketten diske aktarılan hız azaltıldı. Yavaş dokunuşlara otomatik hız artışı uygulanmaz; disk tamamen durursa bir saniye sonra küçük bir hareketle açılır.
+- Raketin çizilen dış sınırı ve diskin çizilen kenarı fizik yarıçapıyla aynıdır (30/11). Kendi raketi dahil iki raket ve disk aynı sunucu kareleriyle çizilir; önden giden bağımsız raket tahmini kaldırıldı. Fizik alt adımları 1/240 saniyedir.
+- 10 gol kuralı korunur. Yeni LoL veri kimliği nedeniyle eski açık LoL tahtaları için yeni seri başlatılmalıdır.
+
+## Kişisel XOX renkleri ve yeni arayüz — 2026.10.21.6
+
+- Futbol ve LoL XOX'te seçtiğiniz vurgu rengi her zaman kendi takımınızı temsil eder. X veya O olmanız fark etmez. Rakip rengin RGB tersi kullanılır; siyah zemin üzerinde okunabilirlik için koyu tonlar açılır. Gri gibi tersinin kendisine çok yakın olduğu renklerde belirgin mavi alternatif kullanılır.
+- Takım etiketleri ve doldurulmuş hücreler aynı renkleri taşır. Kendi takımınızın yanında SEN yazar; X/O işaretleri de korunur. Renk seçiciden değişiklik yapınca mevcut tahta anında güncellenir. İzleyicide X ana renk, O karşıt renktir. Bu eşleştirme yalnızca arayüzdedir; takım ve skor verisi değişmez.
+- Siyah zeminli yeni giriş ekranı, simgeli oyun kartları, yenilenmiş oyuncu paneli, düğmeler, formlar, oyun alanları ve mobil yerleşim eklendi. Görseller yerel SVG/CSS'tir; haricî yazı tipi veya görsel servisi gerekmez.
+- `public/modern.css` ve `public/icons.svg` yeni gerekli dosyalardır; güncellemede public klasörünü tümüyle yükle.
+
+## Amiral Battı — 2026.10.21.7
+
+- Menüde ayrı kart. İki oyuncu taraf seçer; diğerleri izleyebilir. 10 × 10 alana 5, 4, 3, 3 ve 2 karelik gemiler yerleştirilir. Gemiler düz olmalı; çapraz dahil birbirine değemez. Yatay/dikey, rastgele yerleştirme, geri alma ve temizleme vardır.
+- Hazırım ile filo kilitlenir. İki oyuncu da hazır olunca ilk oyuncu bağımsız kriptografik kurayla seçilir. Atış başına 30 saniye; isabet/ıskadan sonra sıra değişir. Aynı kareye tekrar atış yapılamaz. Rakibin 17 gemi karesini vuran kazanır.
+- Bir oyuncu kendi üç ardışık sırasında süreyi kaçırırsa rakibi kazanır; geçerli atış bu sayacı sıfırlar. Bağlantı kopunca süre durur; aynı oturumla döndüğünde devam eder.
+- Oyun sırasında herkese yalnızca atış ve hazırlık durumları gönderilir. Her oyuncu kendi filosunu ayrı özel mesajda alır. Rakip filolar ve izleyiciye açık filolar maç bitene kadar gönderilmez.
+
+## Futbol / LoL Bilgi Düellosu — 2026.10.21.7
+
+- Menüde iki ayrı kart; her biri 1v1. Taraf seçimi ve izleyici desteği vardır. İki oyuncuya aynı sırayla aynı 10 soru ve aynı seçenek dizilimi gelir.
+- Her soruya 20 saniye. Cevap bir kez kilitlenir. Herkes cevaplayınca veya süre dolunca doğru cevap ve tur sonuçları açılır. Beş saniye sonra sonraki soru otomatik başlar. Doğruya 1 puan; hız bonusu yoktur. On soru sonunda en yüksek puan kazanır; eşitlik beraberedir.
+- Futbol soruları mevcut Wikidata arşivindeki tanınmış oyuncuların ülke ve pozitif A takım maç kaydı bulunan kulüp bilgileriyle hazırlanır. Yeni transfer ezberi veya canlı kadro sorusu değildir. LoL soruları mevcut 173 şampiyonun bölge, köken, tür grubu, koridor ve sınıf kayıtlarından üretilir; İngilizce özellik adları gösterilir.
+- Aynı sorudaki diğer geçerli özellikler yanlış seçenek yapılmaz. Cevap anahtarı ve sonraki sorular oyunculara gönderilmez. Kişi yalnızca kendi seçimini görür; rakibin seçimi ortak sonuç açılınca görünür. Sunucu süre ve puanı doğrular.
+
+## Bayrak Yarışı — 2026.10.21.7
+
+- 2–8 kişi, ayrı oyun kartı. Maç başladığında bağlı olanlar katılır; sonradan gelenler izler. 121 ülke arasından maçta tekrarlamayan 15 bayrak seçilir. Herkes aynı bayrağı ve aynı dört ülke seçeneğini görür.
+- Tur başına 15 saniye. Yanlış cevap ve cevapsız süre aşımı birer yanlış sayılır. Her tur sonunda doğru cevap, herkesin sonucu ve toplamlar görünür; beş saniye sonra devam eder. En az yanlış yapan kazanır; en çok yanlış yapanlar sonuçta ayrıca gösterilir. Eşitlikler paylaşılır; herkes aynı sayıda yanlış yaptıysa beraberedir.
+- Oyun başladıktan sonra bağlantısı kesilen kişinin cevapsız turları yanlış sayılır. Oturumuyla dönerse mevcut sorudan devam edebilir. Bağlantı kesmek süreyi uzatmaz.
+- Bayraklar `src/data/flags.json` içinde paketlidir; dış görsel servisi gerekmez. Kaynak: flag-icons (MIT), sürüm bilgisi `src/data/flags-source.json`, lisans `public/flags-LICENSE.txt`. İsteğe bağlı yenileme: `npm run flags:update`; otomatik deploy adımı bayrakları indirmez.
+- Oyun ekranındaki bayrak isteği ülke kodunu içermez. Güncel oda/maç/tur kimliğiyle sunucudan sadece o turun SVG görseli gönderilir.
+
+Bu dört kart mevcut Room binding'ini kullanır; yeni Cloudflare binding veya migration gerekmez. Güncel ZIP'in tamamı yüklenmelidir; `src/data/flags.json`, `public/table-games.js` ve `public/table-games.css` özellikle gereklidir.
