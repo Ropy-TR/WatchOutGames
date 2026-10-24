@@ -275,7 +275,7 @@ export class Room {
         if (msg.type === 'start-spy-guess') beginSpyGuess(game, playerId);
         if (msg.type === 'guess-spy') submitSpyGuess(game, playerId, msg.location);
         if (msg.type === 'vote-spy') {
-          if (game.phase !== 'voting' || msg.voteId !== game.vote.id || !game.participants.includes(msg.targetId) || game.vote.ballots[playerId]) throw new Error('Oy kullanılamaz.');
+          if (game.phase !== 'voting' || msg.voteId !== game.vote.id || (!game.participants.includes(msg.targetId) && msg.targetId !== '__abstain') || Object.hasOwn(game.vote.ballots, playerId)) throw new Error('Oy kullanılamaz.');
           game.vote.ballots[playerId] = msg.targetId;
           resolveSpyVote(game);
         }

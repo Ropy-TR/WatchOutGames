@@ -22,20 +22,22 @@ export function settleSpy(game, reason, pointsForSpy) {
 }
 export function beginSpyVote(game, now = Date.now()) {
   if (game.phase !== 'playing') throw new Error('Şu an oylama başlatılamaz.');
-  game.phase = 'voting'; game.vote = { id: crypto.randomUUID(), ballots: {}, deadline: now + 30000 };
+  game.phase = 'voting'; game.vote = { id: crypto.randomUUID(), ballots: {}, pausedAt: now, remaining: Math.max(0, game.startedAt + game.duration * 1000 - now), deadline: now + 30000 };
 }
 export function resolveSpyVote(game, now = Date.now()) {
-  if (game.phase !== 'voting') return;
+  if (game.phase !== 'voting' || now < game.vote.deadline) return;
   const counts = {};
-  for (const target of Object.values(game.vote.ballots)) counts[target] = (counts[target] || 0) + 1;
+  for (const target of Object.values(game.vote.ballots).filter(target => game.participants.includes(target))) counts[target] = (counts[target] || 0) + 1;
   const accused = Object.keys(counts).find((id) => counts[id] > game.participants.length / 2);
   if (accused) {
     if (accused !== spyId(game)) { settleSpy(game, 'wrong-vote', 2); return; }
     game.phase = 'guessing'; game.guess = { mode: 'caught', deadline: now + 30000 };
     delete game.vote;
   } else if (Object.keys(game.vote.ballots).length === game.participants.length || now >= game.vote.deadline) {
+    const remaining = game.vote.remaining ?? Math.max(0, game.startedAt + game.duration * 1000 - (game.vote.pausedAt ?? now));
+    game.startedAt = now + remaining - game.duration * 1000;
     delete game.vote;
-    if (now >= game.startedAt + game.duration * 1000) settleSpy(game, 'escaped', 2);
+    if (remaining <= 0) settleSpy(game, 'escaped', 2);
     else game.phase = 'playing';
   }
 }
@@ -65,7 +67,7 @@ export function expireSpy(game, now = Date.now()) {
 }
 export function publicSpy(game) {
   const { kind, gameId, category, candidates, round, startedAt, duration, phase, participants, names, match, result } = game;
-  const vote = game.vote ? { id: game.vote.id, deadline: game.vote.deadline, votedIds: Object.keys(game.vote.ballots), counts: Object.fromEntries(participants.map((id) => [id, Object.values(game.vote.ballots).filter((target) => target === id).length])) } : undefined;
+  const vote = game.vote ? { id: game.vote.id, deadline: game.vote.deadline, remaining: game.vote.remaining ?? Math.max(0, game.startedAt + game.duration * 1000 - (game.vote.pausedAt ?? Date.now())), abstained: Object.values(game.vote.ballots).filter(target => target === '__abstain').length, votedIds: Object.keys(game.vote.ballots), counts: Object.fromEntries(participants.map((id) => [id, Object.values(game.vote.ballots).filter((target) => target === id).length])) } : undefined;
   return { kind, gameId, category, candidates, round, startedAt, duration, phase, participants, names, match, result, vote, ...(game.guess ? { guess: { ...game.guess, spyId: spyId(game) } } : {}) };
 }
 

@@ -2,6 +2,12 @@
 
 20 Ekim 2026 — yerel proje, Cloudflare Wrangler çalışma ortamı.
 
+## 2026.10.24.1 — Spyfall kişisel notlar ve oylama
+
+- Değişen JavaScript dosyalarında sözdizimi kontrolü başarılı.
+- Cloudflare kuru derleme kontrolü yapıldı; canlıya dağıtım yapılmadı.
+- Bu değişiklik için otomatik veya çok oyunculu işlev testi çalıştırılmadı. Önceki oylama testleri, eski erken sonuçlanma davranışına aittir.
+
 ## 2026.10.21.10 — Papaz Kimde ve çizim oyunu
 
 - Yeni modüllerde Node sözdizimi kontrolü başarılı.

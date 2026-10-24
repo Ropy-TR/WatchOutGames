@@ -23,7 +23,7 @@ export function createSpy(members, category, round = 1, random = secureIndex) {
   // Every round is independent. Previous spies never affect this draw.
   const spy = members[random(members.length)].id;
   return { kind: 'spyfall', gameId: crypto.randomUUID(), round, category, candidates,
-    startedAt: Date.now(), duration: 480,
+    startedAt: Date.now(), duration: 600,
     roles: Object.fromEntries(members.map(({ id }) => [id, id === spy ? { spy: true, category } : { spy: false, category, location }])) };
 }
 export function createCity({ excludeLetters = [] } = {}) {

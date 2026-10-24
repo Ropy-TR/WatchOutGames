@@ -216,7 +216,17 @@ function matchScores(names, scores, winners = []) {
   return '<div class="match-scores">' + Object.entries(scores || {}).map(([id, score]) => '<span class="chip ' + (winners.includes(id) ? 'score-winner' : '') + '">' + escapeHTML(names[id] || 'Oyuncu') + ' <b>' + score + '</b></span>').join('') + '</div>';
 }
 function matchWinners(names, winners) { return winners.map((id) => escapeHTML(names[id] || 'Oyuncu')).join(', '); }
+let spyScratchKey = '', spyScratch = { crossed: [], note: '' };
+function loadSpyScratch(game) {
+  const key = 'wg-spy-private:' + (current?.code || '') + ':' + playerId + ':' + game.gameId;
+  if (key !== spyScratchKey) { spyScratchKey = key; spyScratch = { crossed: [], note: '' }; try { const saved = JSON.parse(sessionStorage.getItem(key) || 'null'); if (saved && Array.isArray(saved.crossed) && typeof saved.note === 'string') spyScratch = saved; } catch {} }
+  return spyScratch;
+}
+function saveSpyScratch() { try { sessionStorage.setItem(spyScratchKey, JSON.stringify(spyScratch)); } catch {} }
 function renderSpy(game) {
+  const scratch = loadSpyScratch(game);
+  const focusedNote = document.activeElement?.id === 'spyPrivateNote';
+  const noteSelection = focusedNote ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
   clearInterval(timerInterval);
   const role = myRole, participant = game.participants.includes(playerId);
   const guessSelection = $('#spyGuessLocation')?.value;
@@ -225,7 +235,7 @@ function renderSpy(game) {
   if (game.phase === 'playing' && participant) controls = '<button class="start-button" data-action="spy-vote">Oylama başlat</button>' + (role?.spy ? '<button class="subtle-button" data-action="spy-guess">Tahmin et</button>' : '');
   if (game.phase === 'voting') {
     const voted = game.vote.votedIds.includes(playerId);
-    controls = '<div class="vote-panel"><h3>Casus kim?</h3><p>' + game.vote.votedIds.length + '/' + game.participants.length + ' oy · ' + (Math.floor(game.participants.length / 2) + 1) + ' oy gerekli</p><div class="category-row">' + game.participants.map((id) => '<button class="category-chip" data-spy-vote="' + id + '"' + (voted || !participant ? ' disabled' : '') + '>' + escapeHTML(game.names[id]) + ' · ' + (game.vote.counts[id] || 0) + '</button>').join('') + '</div>' + (voted ? '<p>Oyun kaydedildi.</p>' : '') + '</div>';
+    controls = '<div class="vote-panel"><h3>Casus kim?</h3><p>' + game.vote.votedIds.length + '/' + game.participants.length + ' oy · ' + (Math.floor(game.participants.length / 2) + 1) + ' oy gerekli</p><div class="category-row">' + game.participants.map((id) => '<button class="category-chip" data-spy-vote="' + id + '"' + (voted || !participant ? ' disabled' : '') + '>' + escapeHTML(game.names[id]) + ' · ' + (game.vote.counts[id] || 0) + '</button>').join('') + '</div><button class="subtle-button" data-spy-vote="__abstain"' + (voted || !participant ? ' disabled' : '') + '>Oy kullanmak istemiyorum</button><p>' + (game.vote.abstained || 0) + ' çekimser' + (voted ? ' · Tercihin kaydedildi.' : '') + '</p></div>';
   }
   if (game.phase === 'guessing') {
     controls = '<div class="vote-panel"><h3>' + (game.guess.mode === 'caught' ? 'Casus bulundu · son tahmin' : 'Casus tahmin ediyor') + '</h3>';
@@ -238,9 +248,10 @@ function renderSpy(game) {
     controls = '<div class="notice">' + labels[game.result.reason] + '<p>Casus: ' + escapeHTML(game.names[game.result.spyId]) + ' · Cevap: ' + escapeHTML(game.result.location) + '</p></div>' + (game.match.finished ? '<h3 class="match-result">Maç bitti · ' + matchWinners(game.names, game.match.winners) + ' kazandı</h3>' : '') + (participant ? '<button class="start-button" data-action="' + (game.match.finished ? 'new-spy-match' : 'next-spy') + '">' + (game.match.finished ? 'Yeni maç' : 'Sonraki tur') + '</button>' : '');
   }
   const deadline = game.phase === 'voting' ? game.vote.deadline : game.phase === 'guessing' ? game.guess.deadline : game.startedAt + game.duration * 1000;
-  $('#activeGame').innerHTML = gameHeader('Spyfall') + matchScores(game.names, game.match.scores, game.match.winners) + '<div class="spy-meta"><span class="chip">' + escapeHTML(game.category) + '</span><span class="chip">Tur ' + game.round + ' · Hedef 10 puan</span></div>' + (game.phase !== 'results' ? '<div class="spy-role ' + (role?.spy ? 'role-spy' : '') + '"><h3>' + heading + '</h3></div><div class="timer" id="spyTimer"></div>' : '') + '<div class="spy-match-controls">' + controls + '</div><h3 class="list-title">Olası cevaplar</h3><div class="spy-candidates">' + game.candidates.map((word) => '<span>' + escapeHTML(word) + '</span>').join('') + '</div>';
+  $('#activeGame').innerHTML = gameHeader('Spyfall') + matchScores(game.names, game.match.scores, game.match.winners) + '<div class="spy-meta"><span class="chip">' + escapeHTML(game.category) + '</span><span class="chip">Tur ' + game.round + ' · Hedef 10 puan</span></div>' + (game.phase !== 'results' ? '<div class="spy-role ' + (role?.spy ? 'role-spy' : '') + '"><h3>' + heading + '</h3></div><div class="timer" id="spyTimer"></div>' : '') + '<div class="spy-match-controls">' + controls + '</div><h3 class="list-title">Olası cevaplar</h3><div class="spy-candidates">' + game.candidates.map((word) => '<button type="button" class="spy-candidate' + (scratch.crossed.includes(word) ? ' crossed' : '') + '" data-spy-cross="' + escapeHTML(word) + '" aria-pressed="' + scratch.crossed.includes(word) + '">' + escapeHTML(word) + '</button>').join('') + '</div><section class="spy-notes"><label for="spyPrivateNote">Kişisel notların</label><textarea id="spyPrivateNote" maxlength="5000" placeholder="Yalnızca sen görebilirsin…">' + escapeHTML(scratch.note) + '</textarea></section>';
+  if (focusedNote) { const note = $('#spyPrivateNote'); note.focus(); note.setSelectionRange(...noteSelection); }
   if (game.phase !== 'results') {
-    const clock = () => { const sec = Math.max(0, Math.ceil((deadline - Date.now()) / 1000)); const el = $('#spyTimer'); if (el) el.textContent = String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); };
+    const clock = () => { const sec = Math.max(0, Math.ceil((deadline - Date.now()) / 1000)); const el = $('#spyTimer'); if (el) { const format = value => String(Math.floor(value / 60)).padStart(2, '0') + ':' + String(value % 60).padStart(2, '0'); el.textContent = game.phase === 'voting' ? 'Oylama ' + format(sec) + ' · Tur ' + format(Math.ceil(game.vote.remaining / 1000)) + ' (duraklatıldı)' : format(sec); } };
     clock(); timerInterval = setInterval(clock, 250);
   }
 }
@@ -314,6 +325,7 @@ $("#activeGame").addEventListener("click", (e) => {
   if (action === "spy-vote") { send({ type: "start-spy-vote", gameId: currentGame.gameId }); return; }
   if (action === "spy-guess") { send({ type: "start-spy-guess", gameId: currentGame.gameId }); return; }
   if (action === "new-spy-match") { send({ type: "start-spyfall", category: currentGame.category, gameId: currentGame.gameId, restart: true }); return; }
+  const crossTarget = e.target.closest('[data-spy-cross]'); if (crossTarget && currentGame?.kind === 'spyfall') { const word = crossTarget.dataset.spyCross; const scratch = loadSpyScratch(currentGame); scratch.crossed = scratch.crossed.includes(word) ? scratch.crossed.filter(value => value !== word) : [...scratch.crossed, word]; saveSpyScratch(); crossTarget.classList.toggle('crossed', scratch.crossed.includes(word)); crossTarget.setAttribute('aria-pressed', String(scratch.crossed.includes(word))); return; }
   const voteTarget = e.target.closest('[data-spy-vote]'); if (voteTarget) { send({ type: 'vote-spy', gameId: currentGame.gameId, voteId: currentGame.vote.id, targetId: voteTarget.dataset.spyVote }); return; }
   if (action === "master") { showMaster = !showMaster; renderCodenames(currentGame, masterKeys); return; }
   if (action === "stop-city") { submitCity(); return; }
@@ -365,6 +377,7 @@ function submitCity() {
   clearTimeout(citySaveTimer); captureCityDraft(); send({ type: 'submit-city', gameId: currentGame.gameId, answers: cityDraft });
 }
 $('#activeGame').addEventListener('input', (event) => {
+  if (event.target.id === 'spyPrivateNote' && currentGame?.kind === 'spyfall') { loadSpyScratch(currentGame).note = event.target.value; saveSpyScratch(); return; }
   if (!event.target.closest('.city-field')) return;
   captureCityDraft(); clearTimeout(citySaveTimer);
   const gameId = currentGame.gameId;
