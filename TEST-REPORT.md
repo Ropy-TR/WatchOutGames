@@ -2,6 +2,11 @@
 
 20 Ekim 2026 — yerel proje, Cloudflare Wrangler çalışma ortamı.
 
+## 2026.10.24.2 — Yayın adımı
+
+- Üretim build komutu yalnızca sürüm ve dosya kontrolüne çevrildi; yayın sırasında veri indirilmez.
+- Sürüm/dosya kontrolü çalıştırıldı. Oyun testleri bu yapılandırma değişikliği için tekrar çalıştırılmadı.
+
 ## 2026.10.24.1 — Spyfall kişisel notlar ve oylama
 
 - Değişen JavaScript dosyalarında sözdizimi kontrolü başarılı.

@@ -4,7 +4,7 @@ Oda kodu ve şifresiyle oynanan mini oyun sitesi. Arayüz Cloudflare Workers sta
 
 ## Kurulum yapmadan GitHub ile yayınlama
 
-Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.24.1` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.24.1` ve oyun listesinde `hockey` döndürmeli.
+Güncel ZIP dosyasını açıp içindeki `public`, `src`, `scripts`, `test` klasörlerini ve kökteki dosyaları GitHub reposunun köküne yükle. ZIP dosyasını doğrudan yükleme; klasörlerin içeriklerini koru. Cloudflare Worker projesinde bağlı repo ve üretim dalını kontrol et, dağıtım komutu `npx wrangler deploy` olsun. Yeni commit otomatik dağıtılır. Build logunda `WatchOut Games 2026.10.24.2` görünmeli. Yayın sonrası `/api/version` adresi `2026.10.24.2` ve oyun listesinde `hockey` döndürmeli.
 
 ## Yerelde çalıştırma
 
@@ -197,13 +197,13 @@ Bu dört kart mevcut Room binding'ini kullanır; yeni Cloudflare binding veya mi
 - Arama metni, imleç ve odak diğer oyuncular cevap verdiğinde korunur; her yeni soruda sıfırlanır. Yanlış veya listede olmayan serbest metin gönderilmez; cevap için listeden seçim gerekir.
 - Eski dört seçenekli Bayrak Yarışı kayıtları bu sürümde oyun menüsüne döner; güncellemeden sonra yeni Bayrak Yarışı başlatılır.
 
-## Hokeyde basmadan fare kontrolü — 2026.10.24.1
+## Hokeyde basmadan fare kontrolü — 2026.10.24.2
 
 - Masa üzerinde fareyi hareket ettirmek yeterlidir; tıklamak veya basılı tutmak gerekmez. Fare konumu masaya birebir eşlenir. Göreli mesafe çarpanı ve sürükleme başlangıcı kaldırıldı; kenarlara ulaşmak için basılı tutup yeniden konumlama gerekmez.
 - Çok küçük imleç titreşimleri filtrelenir. Mobilde bir noktaya dokunarak hedef verilebilir veya parmak sürüklenebilir. Yön/WASD tuşları çalışır.
 - Sunucu fiziği, hız/ivme sınırları, raket/disk boyutları ve çarpışma hesapları bu sürümde değiştirilmedi. Yalnızca istemci kontrolü ve kontrol metinleri güncellendi.
 
-## Papaz Kimde ve Çiz & Tahmin Et — 2026.10.24.1
+## Papaz Kimde ve Çiz & Tahmin Et — 2026.10.24.2
 
 Oyun seç ekranında iki ayrı kart bulunur; ikisi de 2–8 kişi içindir.
 
@@ -216,8 +216,12 @@ Oyun seç ekranında iki ayrı kart bulunur; ikisi de 2–8 kişi içindir.
 
 Bu sürümde sözdizimi ve Cloudflare kuru derlemesi kontrol edildi; yeni oyunlar için çok oyunculu işlev testleri çalıştırılmadı.
 
-## Spyfall — 2026.10.24.1
+## Spyfall — 2026.10.24.2
 
 Yeni turlar 10 dakikadır. Olası cevaplar tıklanarak kişisel olarak elenir, tekrar tıklanınca işaret kalkar. Notlar ve eleme işaretleri oyuncu/oda/tur anahtarıyla yalnızca bu sekmenin sessionStorage alanında tutulur; sunucuya gönderilmez. Sayfa yenilendiğinde aynı sekmede korunur, yeni turda temiz bir alan açılır.
 
 Oylama açılınca oyuncu veya “Oy kullanmak istemiyorum” seçilir. Herkes tek tercih yapar. Oylama 30 saniye sürer; sonuç süre sonunda belirlenir. Tur saati bu sırada durur. Oyuncuların yarısından fazlası aynı kişiyi seçmezse tur kaldığı süreden sürer. Çekimser oylar kimseye yazılmaz. Genel süre bitince son oylama açılır; çoğunluk çıkmazsa mevcut kaçış puanı uygulanır.
+
+## Hızlı yayın — 2026.10.24.2
+
+Cloudflare build adımı yalnızca `node scripts/check-release.mjs` çalıştırır. Futbol ve LoL verileri yayın sırasında dış kaynaklardan indirilmez; repodaki hazır JSON dosyaları kullanılır. Veri yenileme gerektiğinde `node scripts/update-data.mjs` ayrıca çalıştırılıp oluşan veri dosyaları repoya yüklenebilir.

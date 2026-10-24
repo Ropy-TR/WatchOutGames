@@ -3,7 +3,7 @@ main = "src/worker.js"
 compatibility_date = "2026-10-19"
 
 [build]
-command = "node scripts/update-data.mjs"
+command = "node scripts/check-release.mjs"
 
 [assets]
 directory = "./public"
